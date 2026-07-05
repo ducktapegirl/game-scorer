@@ -64,6 +64,14 @@ Because the rules constrain composition, the vision layer only needs to detect t
 a height (Section 7). Keep `stack` as the single source of truth — the height picker
 just writes into it.
 
+**`boardSide` is set manually, not detected.** Side A and side B boards differ in
+printed art (river vs. coastline), not in color palette, so the vision classifier has
+no basis to distinguish them — this is a one-time manual toggle, not a CV problem.
+Ask it as a single "Side A / Side B" selector at the start of game setup, alongside
+calibration — the same category of input as picking the spirit or entering cards.
+Once set, it determines which branch of the water-scoring rule (Section 4) runs;
+nothing else in `score()` depends on it.
+
 ### 3.2 GameConfig
 
 ```
@@ -109,8 +117,8 @@ score(boardState: BoardState, config: GameConfig) => ScoreBreakdown
 The authoritative scoring values, stacking constraints, and edge cases live in the
 companion file **`harmonies-rules-reference.md`**. Claude Code should read that file
 and encode it; treat it as the single source of truth. The values there are confirmed
-against the published rules — no `VERIFY` guesswork remains, except two explicitly
-flagged edge cases (the lone-gray mountain question and branching-river measurement).
+against the published rules — no `VERIFY` guesswork and no open edge cases remain;
+all values, including the mountain-adjacency and branching-river rules, are confirmed.
 
 Quick summary of what the engine computes (see the reference file for exact tables):
 
@@ -239,7 +247,10 @@ implementing the generic `score()` contract).
 No UI, no camera. Ship when tests pass.
 
 **M2 — Manual board entry UI.** Enter a board by hand into a `BoardState` and score
-it. This doubles as the correction surface later.
+it. This doubles as the correction surface later. Include a **required Side A / Side
+B prompt** before scoring — a simple two-option selector shown once per game, blocking
+score calculation until answered, since `score()` can't run the correct water rule
+without it (see Section 3.1).
 
 **M3 — Cards + Spirit.** Card catalog, manual card entry, spirit modifiers. Extend
 `score()` to fill `animals` and `spirit`.
@@ -254,7 +265,8 @@ Each milestone is a separate, shippable deliverable.
 ## 11. Testing
 
 - The scoring engine must have unit tests with hand-authored boards and expected
-  breakdowns, including edge cases: lone gray (0), mountains with/without adjacency,
+  breakdowns, including edge cases: lone gray mountain scoring 1 point when adjacent
+  to another mountain, mountains with/without adjacency,
   separate vs merged yellow groups, a building with exactly 2 vs 3 neighbor colors,
   base game vs each spirit, add-vs-replace spirits.
 - Keep vision accuracy out of these tests — the engine is deterministic and must be
@@ -387,8 +399,6 @@ per outcome.
 ## 15. Open decisions for the builder to confirm with me
 
 - Fixed board shape / valid `(q, r)` set for sides A and B (needed before M4/M5).
-- The two flagged edge cases in `harmonies-rules-reference.md` (lone-gray mountain;
-  branching-river measurement).
 - The animal card catalog and each card's scoring track (32 cards).
 - Whether to support side B (islands) in v1 or defer it.
 - Reference lighting/photo conditions to calibrate the 7 color swatches against
