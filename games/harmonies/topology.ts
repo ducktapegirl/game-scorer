@@ -71,7 +71,8 @@ export function topology(side: BoardSide): BoardTopology {
 // to a small closed set of compositions, so a whitelist is the whole rule:
 // - gray on gray only, max height 3
 // - max 2 brown; one green may top 0-2 brown (never green on green)
-// - red sits on exactly 1 brown/gray/red (never the 3rd token, never alone)
+// - red may sit alone on empty ground, or on exactly 1 brown/gray/red (never
+//   the 3rd token) — a lone red is legal but is not a "building" for scoring
 // - blue and yellow are ground-level only
 const VALID_STACKS = new Set([
   "",
@@ -85,6 +86,7 @@ const VALID_STACKS = new Set([
   "green",
   "brown,green",
   "brown,brown,green",
+  "red",
   "brown,red",
   "gray,red",
   "red,red",

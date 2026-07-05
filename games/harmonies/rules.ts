@@ -60,10 +60,14 @@ export function score(board: HarmoniesBoardState, config: HarmoniesConfig): Scor
     }
   }
 
-  // Buildings: a red-topped cell scores 5 if the top tokens of its neighbors
-  // show 3+ different colors (a neighboring red counts; empty cells don't).
+  // Buildings: a red token counts as a building only when it sits on a base
+  // (height ≥ 2) — a lone red on bare ground is a legal placement but is not
+  // a building and never scores. A building scores 5 if the top tokens of its
+  // neighbors show 3+ different colors (a neighboring red counts; empty cells
+  // don't).
   const buildings: ScoreCategory = { id: "buildings", label: "Buildings", points: 0, cells: [] };
   for (const id of topped("red")) {
+    if (stacks.get(id)!.length < 2) continue; // lone red: not a building
     const colors = new Set(topo.neighbors(id).map(top).filter(Boolean));
     if (colors.size >= 3) {
       buildings.points += 5;

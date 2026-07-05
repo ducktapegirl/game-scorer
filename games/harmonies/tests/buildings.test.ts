@@ -57,6 +57,19 @@ describe("buildings", () => {
     ).toBe(0);
   });
 
+  it("a lone red on bare ground is not a building and never scores", () => {
+    // Same neighbor colors as the passing 3-color case above, but the red
+    // itself has no base — it's a legal placement, not a building.
+    const breakdown = scoreBoard("A", [
+      [2, 1, "red"],
+      [3, 1, "blue"],
+      [3, 0, "gray"],
+      [2, 0, "green"],
+    ]);
+    expect(points(breakdown, "buildings")).toBe(0);
+    expect(categoryCells(breakdown, "buildings")).toEqual([]);
+  });
+
   it("empty neighbors contribute no color", () => {
     expect(points(scoreBoard("A", [[2, 1, "brown", "red"]]), "buildings")).toBe(0);
   });
