@@ -3,7 +3,7 @@
 This file is the **single source of truth** for scoring logic. It captures the game's
 scoring *facts* (values, adjacency conditions, stacking constraints) as data, in our
 own words — it is **not** a copy of the rulebook. Keep the official Libellud rulebook
-on hand as the authoritative reference and confirm the two flagged edge cases below
+on hand as the authoritative reference and confirm the one flagged edge case below
 against your copy.
 
 Values below are cross-checked against the published rules and multiple guides and
@@ -45,18 +45,22 @@ height** (see the spec's depth-annotation section).
 Brown-only stacks with no green on top score 0.
 
 ### Mountains (gray stacks)
+
+**Is the mountain hex-adjacent to at least one other mountain (any height counts,
+including a lone height-1 gray)?**
+
+- **No:** it scores **0**, regardless of height.
+- **Yes:** it scores by its own height:
+
 | Height | Points |
 |-------:|-------:|
 | 1      | 1      |
 | 2      | 3      |
 | 3      | 7      |
 
-A mountain scores **0 unless it is hex-adjacent to at least one other mountain**.
-
-> **EDGE CASE TO CONFIRM:** sources differ on whether a lone single gray (height 1)
-> counts as a "mountain" for both scoring *and* satisfying a neighbor's adjacency
-> requirement, or whether a mountain must be height 2+. Confirm from your rulebook and
-> encode it as an explicit, tested rule.
+This resolves the earlier open question: a lone height-1 gray **does** count as a
+mountain for adjacency purposes on both sides of the check — it can both qualify for
+points itself and satisfy a neighbor's adjacency requirement.
 
 ### Fields (yellow)
 Each group of **2+ contiguous** yellow tokens scores **5**, regardless of group size.
@@ -82,10 +86,13 @@ ends.
 | 6      | 15     |
 | 7+     | 15 + 4 per token beyond the 6th |
 
-> **IMPLEMENTATION NOTE:** treat connected blue tokens as a graph. For each connected
-> component, the relevant length is the longest shortest-path between any two tokens
-> (the component's token-diameter). Score only the highest-scoring component. Write a
-> test for a branching/looping river so this isn't naively counted as total tokens.
+> **IMPLEMENTATION NOTE (confirmed):** treat connected blue tokens as a graph. For
+> each connected component, the relevant length is the longest shortest-path between
+> any two tokens (the component's token-diameter) — **not** a total token count. This
+> is the correct rule for branching or looping rivers, confirmed. Score only the
+> highest-scoring component. Write a test for a branching/looping river to lock this
+> in, since it's the one case where "count all the blue tokens" would give a wrong
+> answer.
 
 ### Water — Side B (islands)
 Each island (a space or group of spaces separated from others by blue tokens) scores
