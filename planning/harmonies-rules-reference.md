@@ -25,8 +25,10 @@ are believed correct, but the physical rulebook wins any disagreement.
 - **gray** on gray only; max height 3.
 - **brown** on brown only; max 2 brown in a stack.
 - **green** sits on 0, 1, or 2 brown (never on green; at most one green per stack).
-- **red** sits on exactly 1 brown / gray / red; red is never the 3rd token in a stack
-  (so a building tops out at height 2 on a single base).
+- **red** may be placed alone directly on an empty space, or sit on exactly 1
+  brown / gray / red; red is never the 3rd token in a stack (so a stack tops out at
+  height 2). A lone red on bare ground is a legal placement but does **not** count as
+  a building for scoring — see the Buildings section below.
 - **blue** and **yellow** are ground-level only; nothing may be placed on them.
 - Nothing is ever placed *under* an existing token, or under/over an animal cube.
 
@@ -67,6 +69,10 @@ Each group of **2+ contiguous** yellow tokens scores **5**, regardless of group 
 Many small separate groups beat one big group. A lone yellow scores 0.
 
 ### Buildings (red-topped stacks)
+A **building** is a red token stacked on a base (brown / gray / red) — height 2. A
+lone red placed directly on an empty space is a legal placement but is **not** a
+building: it never scores, regardless of its neighbors.
+
 Each building scores **5** if the top tokens of its hex-adjacent neighbors show **3+
 different colors** (a neighboring red counts as a color). Otherwise 0. Only the top
 token of each neighbor counts.
