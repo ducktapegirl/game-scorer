@@ -49,3 +49,6 @@ scaffold ahead (e.g. no `core/vision` until M4).
 - Work on the designated feature branch; never push to `main`.
 - Commit after each green milestone gate.
 - Animals/spirit categories exist in the breakdown from M1 but score 0 until M3.
+- Write any implementation plan to a file in `planning/` before executing it, so it's
+  reviewable in an editor ahead of time — don't just present a plan in chat and start
+  coding.
