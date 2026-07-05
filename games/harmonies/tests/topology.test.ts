@@ -60,6 +60,7 @@ describe("validateStack", () => {
     ["brown", "red"],
     ["gray", "red"],
     ["red", "red"],
+    ["red"], // legal placement, but not a "building" — see rules.ts
   ];
 
   const invalid: TokenColor[][] = [
@@ -68,7 +69,6 @@ describe("validateStack", () => {
     ["blue", "green"], // nothing on blue
     ["yellow", "red"], // nothing on yellow
     ["brown", "brown", "red"], // red is never the 3rd token
-    ["red"], // red sits on exactly one base token
     ["red", "red", "red"],
     ["gray", "gray", "gray", "gray"], // max height 3
     ["gray", "brown"], // brown on brown only
