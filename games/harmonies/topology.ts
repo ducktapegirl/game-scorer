@@ -55,6 +55,13 @@ function buildTopology(side: BoardSide): BoardTopology {
     shape: "hex",
     cells,
     neighbors: (id) => neighborMap.get(id) ?? [],
+    // Flat-top hex layout in units of one hex "size" (center-to-corner):
+    // adjacent columns are 1.5 apart, rows √3 apart, odd columns shifted by
+    // the same half-row the axial convention above encodes.
+    cellCenter: (id) => {
+      const { q, r } = parseCellId(id);
+      return { x: 1.5 * q, y: Math.sqrt(3) * (r + q / 2) };
+    },
   };
 }
 
