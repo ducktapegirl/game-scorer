@@ -4,6 +4,7 @@
 
 import type { GameModule } from "../../core/types";
 import { harmoniesConfigSchema, type HarmoniesConfig } from "./config";
+import { BOARD_VARIANTS, stackChoices } from "./entry";
 import { score, type HarmoniesBoardState } from "./rules";
 import { TOKEN_DEFS } from "./tokens";
 import { topology } from "./topology";
@@ -19,10 +20,12 @@ export const harmonies: GameModule<HarmoniesBoardState, HarmoniesConfig> = {
   name: "Harmonies",
   hasVisualBoard: true,
   board: {
+    variants: BOARD_VARIANTS,
     topology,
     tokenVocabulary: TOKEN_DEFS,
     allowsStacking: true,
     maxStackHeight: 3,
+    stackChoices,
   },
   score,
   configSchema: harmoniesConfigSchema,
