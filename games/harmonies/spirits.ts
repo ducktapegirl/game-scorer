@@ -96,10 +96,11 @@ const spiritScores = {
     return { points: greens.length, cells: greens.map((c) => c.id) };
   },
 
-  spi_010: () => {
-    // Badger (replace animals): handled in rules.ts (config-based)
-    // This is a placeholder; actual implementation depends on config
-    return { points: 0, cells: [] };
+  spi_010: (board: HarmoniesBoardState) => {
+    // Badger (replace trees): flat 3 points per tree (green-topped stack),
+    // regardless of height. A board-only rescore of the trees category.
+    const trees = board.cells.filter((c) => c.stack.at(-1) === "green");
+    return { points: 3 * trees.length, cells: trees.map((c) => c.id) };
   },
 };
 
@@ -166,7 +167,7 @@ export const SPIRIT_CARDS: SpiritCard[] = [
     id: "spi_010",
     name: "Badger",
     mode: "replace",
-    replaces: "animals",
+    replaces: "trees",
     score: spiritScores.spi_010,
   },
 ];
