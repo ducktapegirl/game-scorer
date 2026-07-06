@@ -4,7 +4,9 @@
 
 import { componentTokenDiameter, connectedComponents } from "../../core/graph";
 import type { BoardState, CellId, ScoreBreakdown, ScoreCategory } from "../../core/types";
+import { scoreAnimals } from "./animals";
 import type { HarmoniesConfig } from "./config";
+import { applySpirit } from "./spirits";
 import type { TokenColor } from "./tokens";
 import { topology, type BoardSide } from "./topology";
 
@@ -80,16 +82,16 @@ export function score(board: HarmoniesBoardState, config: HarmoniesConfig): Scor
       ? scoreRiver(topped("blue"), topo.neighbors)
       : scoreIslands(topo.cells, topo.neighbors, top);
 
-  // Animals and spirit are scored in M3 from config.animalCards / config.spirit;
-  // the config is accepted now so the public signature is final from M1.
-  void config;
-  const animals: ScoreCategory = { id: "animals", label: "Animals", points: 0, cells: [] };
-  const spirit: ScoreCategory = { id: "spirit", label: "Spirit", points: 0, cells: [] };
+  // Score animal cards from config
+  const animals = scoreAnimals(config.animalCards);
 
-  const categories = [trees, mountains, fields, buildings, water, animals, spirit];
+  // Score base categories, then apply spirit modifier
+  const baseCategories = [trees, mountains, fields, buildings, water, animals];
+  const { spirit, modifiedBreakdown } = applySpirit(config.spirit, board, baseCategories);
+
   return {
-    categories,
-    total: categories.reduce((sum, c) => sum + c.points, 0),
+    categories: [...modifiedBreakdown, spirit],
+    total: modifiedBreakdown.reduce((sum, c) => sum + c.points, 0) + spirit.points,
   };
 }
 

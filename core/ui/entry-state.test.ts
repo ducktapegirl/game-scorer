@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
-import type { BoardTopology, GameModule } from "../types";
-import { emptyBoard, stackAt, validateSavedBoard, withStack } from "./entry-state";
+import type { BoardTopology, ConfigSchema, GameModule } from "../types";
+import {
+  emptyBoard,
+  stackAt,
+  validateSavedBoard,
+  validateSavedConfig,
+  withStack,
+} from "./entry-state";
 
 // A minimal fake game so these tests exercise core mechanism only, never a
 // real game's rules: 3 cells in a row, tokens "x" (stackable 1-2) and "y".
@@ -92,5 +98,65 @@ describe("validateSavedBoard", () => {
     ["a stack not among the choices", { boardSide: "V", cells: [{ id: "a", stack: ["y", "x"] }] }],
   ])("rejects %s", (_name, raw) => {
     expect(validateSavedBoard(raw, fakeBoard)).toBeNull();
+  });
+});
+
+describe("validateSavedConfig", () => {
+  // A minimal fake schema exercising all three field types.
+  const schema: ConfigSchema = [
+    {
+      type: "picker",
+      id: "mode",
+      label: "Mode",
+      options: [
+        { id: "none", label: "None" },
+        { id: "m1", label: "Mode 1" },
+      ],
+    },
+    {
+      type: "counterList",
+      id: "cards",
+      label: "Cards",
+      items: [
+        { id: "c1", label: "Card 1", max: 2 },
+        { id: "c2", label: "Card 2", max: 3 },
+      ],
+    },
+    { type: "toggle", id: "bonus", label: "Bonus" },
+  ];
+
+  const saved = {
+    mode: "m1",
+    cards: [
+      { id: "c1", count: 2 },
+      { id: "c2", count: 0 },
+    ],
+    bonus: true,
+  };
+
+  it("accepts a well-formed saved config", () => {
+    expect(validateSavedConfig(saved, schema)).toEqual(saved);
+  });
+
+  it("round-trips through JSON", () => {
+    expect(validateSavedConfig(JSON.parse(JSON.stringify(saved)), schema)).toEqual(saved);
+  });
+
+  it.each([
+    ["null", null],
+    ["an array", []],
+    ["a missing field", { mode: "m1", cards: [] }],
+    ["an extra field", { ...saved, stray: 1 }],
+    ["an unknown picker value", { ...saved, mode: "m2" }],
+    ["a non-string picker value", { ...saved, mode: 3 }],
+    ["a non-array counterList", { ...saved, cards: "c1" }],
+    ["an unknown card id", { ...saved, cards: [{ id: "zz", count: 1 }] }],
+    ["a duplicate card entry", { ...saved, cards: [saved.cards[0], saved.cards[0]] }],
+    ["a count above max", { ...saved, cards: [{ id: "c1", count: 3 }] }],
+    ["a negative count", { ...saved, cards: [{ id: "c1", count: -1 }] }],
+    ["a non-integer count", { ...saved, cards: [{ id: "c1", count: 1.5 }] }],
+    ["a non-boolean toggle", { ...saved, bonus: "yes" }],
+  ])("rejects %s", (_name, raw) => {
+    expect(validateSavedConfig(raw, schema)).toBeNull();
   });
 });

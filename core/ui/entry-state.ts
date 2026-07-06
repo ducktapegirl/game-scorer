@@ -3,7 +3,15 @@
 // source of truth (only non-empty cells are stored) and validate anything
 // loaded from persistence against the game module's topology and entry data.
 
-import type { BoardState, CellId, GameModule, TokenId } from "../types";
+import type {
+  BoardState,
+  CellId,
+  ConfigFieldValue,
+  ConfigSchema,
+  CounterEntry,
+  GameModule,
+  TokenId,
+} from "../types";
 
 export function emptyBoard<B extends BoardState>(boardSide: B["boardSide"]): B {
   return { boardSide, cells: [] } as BoardState as B;
@@ -55,4 +63,58 @@ export function validateSavedBoard<B extends BoardState>(
     board.cells.push({ id, stack: [...(stack as TokenId[])] });
   }
   return board;
+}
+
+/**
+ * Validates a value loaded from persistence against a game's config schema:
+ * every schema field present with the right shape (picker value among the
+ * options, counterList entries with known ids, no duplicates, counts within
+ * 0..max, toggle a boolean), and no keys outside the schema. Returns null on
+ * any mismatch — the caller falls back to the module's emptyConfig.
+ */
+export function validateSavedConfig<C extends Record<string, ConfigFieldValue>>(
+  raw: unknown,
+  schema: ConfigSchema,
+): C | null {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return null;
+  const record = raw as Record<string, unknown>;
+  if (Object.keys(record).length !== schema.length) return null;
+
+  const config: Record<string, ConfigFieldValue> = {};
+  for (const field of schema) {
+    const value = record[field.id];
+    switch (field.type) {
+      case "picker": {
+        if (typeof value !== "string") return null;
+        if (!field.options.some((o) => o.id === value)) return null;
+        config[field.id] = value;
+        break;
+      }
+      case "counterList": {
+        if (!Array.isArray(value)) return null;
+        const items = new Map(field.items.map((i) => [i.id, i]));
+        const seen = new Set<string>();
+        const entries: CounterEntry[] = [];
+        for (const entry of value) {
+          if (typeof entry !== "object" || entry === null) return null;
+          const { id, count } = entry as { id?: unknown; count?: unknown };
+          if (typeof id !== "string" || seen.has(id)) return null;
+          const item = items.get(id);
+          if (item === undefined) return null;
+          if (typeof count !== "number" || !Number.isInteger(count)) return null;
+          if (count < 0 || (item.max !== undefined && count > item.max)) return null;
+          seen.add(id);
+          entries.push({ id, count });
+        }
+        config[field.id] = entries;
+        break;
+      }
+      case "toggle": {
+        if (typeof value !== "boolean") return null;
+        config[field.id] = value;
+        break;
+      }
+    }
+  }
+  return config as C;
 }
