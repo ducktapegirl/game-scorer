@@ -75,14 +75,16 @@ describe("score() integration", () => {
     }
   });
 
-  it("accepts a config but scores animals and spirit as 0 until M3", () => {
+  it("scores animals and spirit from config", () => {
+    // Single green = 1 tree point. Ant card with 2 cubes = track[1] = 3. Owl spirit (add) = +1 per bush = +1 for that green.
     const breakdown = score(boardWith("A", [[0, 0, "green"]]), {
-      spirit: "some-spirit",
-      animalCards: [{ cardId: "some-card", cubesPlaced: 2 }],
+      spirit: "spi_001", // Owl (add)
+      animalCards: [{ id: "ani_001", count: 2 }], // Ant with 2 cubes
     });
-    expect(points(breakdown, "animals")).toBe(0);
-    expect(points(breakdown, "spirit")).toBe(0);
-    expect(breakdown.total).toBe(1);
+    expect(points(breakdown, "trees")).toBe(1);
+    expect(points(breakdown, "animals")).toBe(3);
+    expect(points(breakdown, "spirit")).toBe(1); // Owl adds 1 per bush
+    expect(breakdown.total).toBe(5); // 1 + 3 + 1
   });
 
   it("rejects cells that are not on the chosen board side", () => {

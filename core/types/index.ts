@@ -51,19 +51,30 @@ export interface StackChoice<T extends TokenId = TokenId> {
   stack: T[];
 }
 
+// Generic config shapes used across games
+export interface CounterEntry {
+  id: string;
+  count: number;
+}
+
+export type ConfigFieldValue = string | CounterEntry[] | boolean;
+
 export type ConfigField =
-  | { type: "picker"; id: string; label: string; options: string[] }
+  | { type: "picker"; id: string; label: string; options: { id: string; label: string }[] }
   | {
       type: "counterList";
       id: string;
       label: string;
-      items: { id: string; label: string }[];
+      items: { id: string; label: string; max?: number }[];
     }
   | { type: "toggle"; id: string; label: string };
 
 export type ConfigSchema = ConfigField[];
 
-export interface GameModule<B extends BoardState = BoardState, C = unknown> {
+export interface GameModule<
+  B extends BoardState = BoardState,
+  C extends Record<string, ConfigFieldValue> = Record<string, ConfigFieldValue>,
+> {
   id: string;
   name: string;
   hasVisualBoard: boolean;
@@ -84,5 +95,6 @@ export interface GameModule<B extends BoardState = BoardState, C = unknown> {
   };
   score(board: B, config: C): ScoreBreakdown;
   configSchema: ConfigSchema;
+  emptyConfig: C;
   // revealSequence is added in M6
 }

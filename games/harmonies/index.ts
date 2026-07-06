@@ -3,16 +3,20 @@
 // imports Harmonies specifics directly.
 
 import type { GameModule } from "../../core/types";
-import { harmoniesConfigSchema, type HarmoniesConfig } from "./config";
+import { EMPTY_CONFIG, harmoniesConfigSchema, type HarmoniesConfig } from "./config";
 import { BOARD_VARIANTS, stackChoices } from "./entry";
 import { score, type HarmoniesBoardState } from "./rules";
 import { TOKEN_DEFS } from "./tokens";
 import { topology } from "./topology";
 
 export type { HarmoniesBoardState } from "./rules";
-export type { HarmoniesConfig, AnimalCardEntry, SpiritCardId } from "./config";
+export type { HarmoniesConfig } from "./config";
+export type { AnimalCard } from "./animals";
+export type { SpiritCard } from "./spirits";
 export type { BoardSide } from "./topology";
 export type { TokenColor } from "./tokens";
+export { ANIMAL_CARDS, scoreAnimals } from "./animals";
+export { SPIRIT_CARDS, applySpirit } from "./spirits";
 export { score } from "./rules";
 
 export const harmonies: GameModule<HarmoniesBoardState, HarmoniesConfig> = {
@@ -29,4 +33,5 @@ export const harmonies: GameModule<HarmoniesBoardState, HarmoniesConfig> = {
   },
   score,
   configSchema: harmoniesConfigSchema,
+  emptyConfig: EMPTY_CONFIG,
 };
