@@ -4,18 +4,20 @@
 // M5 correction surface: the initial board can come from storage today or a
 // vision proposal later, and the editing path is identical.
 
-import { clearBoard, loadBoard, saveBoard } from "../storage";
+import { clearBoard, clearConfig, loadBoard, loadConfig, saveBoard, saveConfig } from "../storage";
 import type { BoardState, CellId, ConfigFieldValue, GameModule, TokenId } from "../types";
 import { renderBoard } from "./board-view";
-import { emptyBoard, stackAt, validateSavedBoard, withStack } from "./entry-state";
+import { renderConfig } from "./config-view";
+import { emptyBoard, stackAt, validateSavedBoard, validateSavedConfig, withStack } from "./entry-state";
 import { renderScore } from "./score-view";
 
 export function mountEntryScreen<B extends BoardState, C extends Record<string, ConfigFieldValue>>(
   root: HTMLElement,
   module: GameModule<B, C>,
-  config: C,
 ): void {
   let board: B | null = validateSavedBoard<B>(loadBoard(module.id), module.board);
+  let config: C =
+    validateSavedConfig<C>(loadConfig(module.id), module.configSchema) ?? module.emptyConfig;
   let selected: CellId | null = null;
   let pendingToken: TokenId | null = null;
 
@@ -28,6 +30,12 @@ export function mountEntryScreen<B extends BoardState, C extends Record<string, 
   function setBoard(next: B): void {
     board = next;
     saveBoard(module.id, next);
+  }
+
+  function setConfig(next: C): void {
+    config = next;
+    saveConfig(module.id, next);
+    render();
   }
 
   function applyStack(stack: TokenId[]): void {
@@ -135,6 +143,28 @@ export function mountEntryScreen<B extends BoardState, C extends Record<string, 
     return editor;
   }
 
+  function renderConfigSection(): HTMLElement {
+    const section = document.createElement("div");
+    section.append(
+      renderConfig({
+        schema: module.configSchema,
+        config,
+        onChange: setConfig,
+      }),
+    );
+    const clear = document.createElement("p");
+    clear.append(
+      button("Clear cards", () => {
+        if (!confirm("Remove all entered cards and options?")) return;
+        clearConfig(module.id);
+        config = module.emptyConfig;
+        render();
+      }),
+    );
+    section.append(clear);
+    return section;
+  }
+
   function render(): void {
     if (board === null) {
       root.replaceChildren(...renderVariantPrompt());
@@ -155,6 +185,7 @@ export function mountEntryScreen<B extends BoardState, C extends Record<string, 
         },
       }),
       renderEditor(b),
+      ...(module.configSchema.length > 0 ? [renderConfigSection()] : []),
       renderScore(module.score(b, config)),
     );
   }
