@@ -1,10 +1,10 @@
-// The photo-based board entry flow (M4): pick a photo → tap the four board
-// corners → run core/vision's pipeline → review the proposal + per-cell
-// debug data → accept into the entry screen. DOM glue only — all pipeline
-// math lives in core/vision. Browser-default UI, no CSS, per the plain-UI
-// constraint. The always-visible debug section is deliberate: it is the
-// calibration tool for tuning the game's placeholder swatches and margins
-// against real photos.
+// The photo-based board entry flow (M4, hardened M4.5): pick a photo → tap
+// the centers of the grid's four CORNER TILES → run core/vision's pipeline
+// → review the proposal + per-cell debug data → accept into the entry
+// screen. DOM glue only — all pipeline math lives in core/vision.
+// Browser-default UI, no CSS, per the plain-UI constraint. The
+// always-visible debug section is deliberate: it is the calibration tool
+// for tuning the game's swatches against real photos.
 
 import type { BoardState, GameModule } from "../types";
 import { proposeBoard, type CellDebug, type CornerTaps } from "../vision/propose";
@@ -38,7 +38,7 @@ export function renderPhotoScreen<B extends BoardState>(
   const { module, variant, onAccept, onCancel } = opts;
   const vision = module.vision;
   const topology = module.board.topology(variant);
-  if (!vision || !topology.cellCenterNorm) {
+  if (!vision || !topology.calibrationCells) {
     throw new Error(`${module.id} does not support photo entry`);
   }
 
@@ -114,7 +114,7 @@ export function renderPhotoScreen<B extends BoardState>(
     const image = ctx.getImageData(0, 0, canvas!.width, canvas!.height);
     result = proposeBoard({
       image,
-      corners: corners as unknown as CornerTaps,
+      taps: corners as unknown as CornerTaps,
       topology,
       vocabulary: module.board.tokenVocabulary,
       vision: vision!,
@@ -127,23 +127,25 @@ export function renderPhotoScreen<B extends BoardState>(
     const table = document.createElement("table");
     table.border = "1";
     const header = table.insertRow();
-    for (const label of ["Cell", "Sampled RGB", "Sampled Lab", "Match", "ΔE", "Runner-up", "ΔE"]) {
+    const headings = ["Cell", "Match", "Vote %", "Cube %", "Runner-up", "RU %", "Mean RGB", "ΔE"];
+    for (const label of headings) {
       const th = document.createElement("th");
       th.textContent = label;
       header.append(th);
     }
-    const fmt = (n: number): string => n.toFixed(1);
+    const pct = (n: number): string => `${Math.round(n * 100)}%`;
     for (const cell of debug) {
       const row = table.insertRow();
-      const { rgb, lab, classification } = cell;
+      const c = cell.classification;
       const cells = [
         cell.cellId,
-        `${Math.round(rgb.r)}, ${Math.round(rgb.g)}, ${Math.round(rgb.b)}`,
-        `${fmt(lab.L)}, ${fmt(lab.a)}, ${fmt(lab.b)}`,
-        classification.token ?? "(empty)",
-        fmt(classification.distance),
-        classification.runnerUp ? (classification.runnerUp.token ?? "(empty)") : "—",
-        classification.runnerUp ? fmt(classification.runnerUp.distance) : "—",
+        c.token ?? "(empty)",
+        pct(c.voteShare),
+        pct(c.ignoredShare),
+        c.runnerUp ? (c.runnerUp.token ?? "(empty)") : "—",
+        c.runnerUp ? pct(c.runnerUp.voteShare) : "—",
+        `${Math.round(c.meanRgb.r)}, ${Math.round(c.meanRgb.g)}, ${Math.round(c.meanRgb.b)}`,
+        c.meanDeltaE.toFixed(1),
       ];
       for (const text of cells) {
         row.insertCell().textContent = text;
@@ -154,7 +156,9 @@ export function renderPhotoScreen<B extends BoardState>(
 
   function render(): void {
     root.replaceChildren();
-    root.append(p("Score from photo — pick a photo of the board, then tap its four corners."));
+    root.append(
+      p("Score from photo — pick a photo of the board, then tap the four corner tiles of the hex grid."),
+    );
     const controls = document.createElement("p");
     const input = document.createElement("input");
     input.type = "file";
@@ -172,8 +176,8 @@ export function renderPhotoScreen<B extends BoardState>(
     if (corners.length < 4) {
       root.append(
         p(
-          `Tap the ${CORNER_PROMPTS[corners.length]!} corner of the board ` +
-            `(${corners.length} of 4 tapped).`,
+          `Tap the center of the ${CORNER_PROMPTS[corners.length]!} corner tile of the hex ` +
+            `grid — the tile itself, or the token sitting on it (${corners.length} of 4 tapped).`,
         ),
       );
     }
@@ -217,8 +221,9 @@ export function renderPhotoScreen<B extends BoardState>(
       root.append(accept);
       root.append(
         p(
-          "Debug — per-cell samples (circles on the photo mark the sample points; " +
-            "use this to calibrate swatches and board margins):",
+          "Debug — per-cell vote results (circles on the photo mark the sample patches; " +
+            "low Vote % or a close runner-up means an uncertain cell; Mean RGB feeds " +
+            "swatch recalibration):",
         ),
       );
       root.append(renderDebugTable(proposal.debug));
