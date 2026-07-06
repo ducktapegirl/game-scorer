@@ -32,15 +32,39 @@ export interface BoardTopology {
   cells: CellId[]; // the fixed set of valid cell ids
   neighbors(id: CellId): CellId[]; // adjacency, filtered to valid cells
   // Abstract layout coordinates for on-screen rendering, in units of one cell
-  // spacing. Distinct from M4's cellCenterPx, which maps into photo space.
+  // spacing. Distinct from cellCenterNorm, which maps into photo space.
   cellCenter(id: CellId): { x: number; y: number };
+  // The cell center in normalized [0,1]² coordinates inside the physical
+  // board rectangle whose corners the user taps during photo calibration.
+  // Supplied only by games with hasVisualBoard.
+  cellCenterNorm?(id: CellId): { x: number; y: number };
+}
+
+// A color in CIE Lab (D65) — the perceptual space the vision classifier
+// measures swatch distance in.
+export interface Lab {
+  L: number;
+  a: number;
+  b: number;
 }
 
 export interface TokenDef {
   id: TokenId;
   label: string;
   displayColor?: string; // CSS color for rendering; omitted → white + label text
-  referenceSwatch?: unknown; // Lab swatch data lands in M4 calibration
+  referenceSwatch?: Lab; // calibrated from reference photos of the real tokens
+}
+
+// Game-supplied data for the vision pipeline (core/vision is the mechanism;
+// this is the per-game data it runs on). Present iff hasVisualBoard.
+export interface GameVisionSpec<V extends string = string, T extends TokenId = TokenId> {
+  // The empty-board appearance(s) for a variant. The printed art is rarely
+  // one flat color, so this is a list — any of them winning the nearest-
+  // swatch match means "no token here".
+  emptySwatches(variant: V): Lab[];
+  // The stack the vision layer proposes when it sees `token` on top of a
+  // cell (it can never see underneath).
+  proposedStack(token: T): T[];
 }
 
 // A stack a player may enter for a cell, bottom-to-top, keyed by its top token.
@@ -96,5 +120,8 @@ export interface GameModule<
   score(board: B, config: C): ScoreBreakdown;
   configSchema: ConfigSchema;
   emptyConfig: C;
+  // Vision data for photo-based board entry; core/ui offers the photo flow
+  // only when this is present (and hasVisualBoard is true).
+  vision?: GameVisionSpec<B["boardSide"]>;
   // revealSequence is added in M6
 }

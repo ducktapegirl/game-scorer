@@ -33,6 +33,23 @@ const AXIAL_DIRECTIONS = [
   [0, 1],
 ] as const;
 
+// PLACEHOLDER geometry (M4 plan decision 1): the fraction of the physical
+// board rectangle — the one whose corners are tapped during calibration —
+// taken up by margin outside the hex grid, per edge. Tuned against real
+// photos via the photo screen's sample-point overlay; a data-only edit.
+const BOARD_MARGINS: Record<
+  BoardSide,
+  { left: number; right: number; top: number; bottom: number }
+> = {
+  A: { left: 0.08, right: 0.08, top: 0.08, bottom: 0.08 },
+  B: { left: 0.08, right: 0.08, top: 0.08, bottom: 0.08 },
+};
+
+// A flat-top hex of size 1 (center-to-corner) extends 1 in x and √3/2 in y
+// beyond its center — the grid's true bounding box includes these extents.
+const HEX_X_EXTENT = 1;
+const HEX_Y_EXTENT = Math.sqrt(3) / 2;
+
 function buildTopology(side: BoardSide): BoardTopology {
   const cells: CellId[] = [];
   COLUMN_HEIGHTS[side].forEach((height, q) => {
@@ -51,16 +68,35 @@ function buildTopology(side: BoardSide): BoardTopology {
     );
   }
 
+  // Flat-top hex layout in units of one hex "size" (center-to-corner):
+  // adjacent columns are 1.5 apart, rows √3 apart, odd columns shifted by
+  // the same half-row the axial convention above encodes.
+  const cellCenter = (id: CellId): { x: number; y: number } => {
+    const { q, r } = parseCellId(id);
+    return { x: 1.5 * q, y: Math.sqrt(3) * (r + q / 2) };
+  };
+
+  // The grid's bounding box (including hex extents), mapped into the unit
+  // square inset by the side's physical margins — where each cell center
+  // lands inside the calibration rectangle for the vision sampler.
+  const centers = cells.map(cellCenter);
+  const minX = Math.min(...centers.map((c) => c.x)) - HEX_X_EXTENT;
+  const maxX = Math.max(...centers.map((c) => c.x)) + HEX_X_EXTENT;
+  const minY = Math.min(...centers.map((c) => c.y)) - HEX_Y_EXTENT;
+  const maxY = Math.max(...centers.map((c) => c.y)) + HEX_Y_EXTENT;
+  const margins = BOARD_MARGINS[side];
+
   return {
     shape: "hex",
     cells,
     neighbors: (id) => neighborMap.get(id) ?? [],
-    // Flat-top hex layout in units of one hex "size" (center-to-corner):
-    // adjacent columns are 1.5 apart, rows √3 apart, odd columns shifted by
-    // the same half-row the axial convention above encodes.
-    cellCenter: (id) => {
-      const { q, r } = parseCellId(id);
-      return { x: 1.5 * q, y: Math.sqrt(3) * (r + q / 2) };
+    cellCenter,
+    cellCenterNorm: (id) => {
+      const c = cellCenter(id);
+      return {
+        x: margins.left + ((c.x - minX) / (maxX - minX)) * (1 - margins.left - margins.right),
+        y: margins.top + ((c.y - minY) / (maxY - minY)) * (1 - margins.top - margins.bottom),
+      };
     },
   };
 }

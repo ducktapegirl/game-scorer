@@ -9,6 +9,7 @@ import type { BoardState, CellId, ConfigFieldValue, GameModule, TokenId } from "
 import { renderBoard } from "./board-view";
 import { renderConfig } from "./config-view";
 import { emptyBoard, stackAt, validateSavedBoard, validateSavedConfig, withStack } from "./entry-state";
+import { renderPhotoScreen } from "./photo-screen";
 import { renderScore } from "./score-view";
 
 export function mountEntryScreen<B extends BoardState, C extends Record<string, ConfigFieldValue>>(
@@ -20,6 +21,7 @@ export function mountEntryScreen<B extends BoardState, C extends Record<string, 
     validateSavedConfig<C>(loadConfig(module.id), module.configSchema) ?? module.emptyConfig;
   let selected: CellId | null = null;
   let pendingToken: TokenId | null = null;
+  let photoMode = false;
 
   // A single-variant game has nothing to ask; multi-variant games (Harmonies
   // side A / side B) block everything — including score() — on the answer.
@@ -96,7 +98,42 @@ export function mountEntryScreen<B extends BoardState, C extends Record<string, 
         render();
       }),
     );
+    // Photo-based entry (M4) is offered only when the game supplies vision
+    // data and photo-space geometry for this variant.
+    if (module.vision && module.board.topology(b.boardSide).cellCenterNorm) {
+      controls.append(
+        " ",
+        button("Score from photo", () => {
+          photoMode = true;
+          render();
+        }),
+      );
+    }
     return controls;
+  }
+
+  function renderPhotoMode(b: B): HTMLElement {
+    return renderPhotoScreen<B>({
+      module,
+      variant: b.boardSide,
+      onAccept: (proposed) => {
+        if (
+          b.cells.length > 0 &&
+          !confirm("Replace the current board with the photo proposal?")
+        ) {
+          return;
+        }
+        photoMode = false;
+        selected = null;
+        pendingToken = null;
+        setBoard(proposed as B);
+        render();
+      },
+      onCancel: () => {
+        photoMode = false;
+        render();
+      },
+    });
   }
 
   function renderEditor(b: B): HTMLElement {
@@ -171,6 +208,10 @@ export function mountEntryScreen<B extends BoardState, C extends Record<string, 
       return;
     }
     const b = board;
+    if (photoMode) {
+      root.replaceChildren(renderPhotoMode(b));
+      return;
+    }
     root.replaceChildren(
       renderControls(b),
       renderBoard({
