@@ -13,10 +13,11 @@ reference deliberately says "confirm each card's exact numbers and add/replace
 behavior from the cards themselves," and CLAUDE.md forbids inventing values. Decisions
 confirmed with the user:
 
-1. **Card data**: Claude researches the published values (rulebook PDF, BGG, guides)
-   and writes them to a new `planning/harmonies-cards-reference.md`; the user verifies
-   against physical cards afterwards. Cross-check every value against ≥2 independent
-   sources; anything conflicting or single-sourced gets a `NEEDS-CHECK` flag in the doc.
+1. **Card data (placeholder approach)**: Use temporary made-up data for all 32 animal
+   cards and 10 spirit cards to build the M3 structure and prove it works. User will
+   then provide real card values (either directly transcribed or researched from
+   verified sources); transcription into the catalogs is a data-only change that
+   tests keep honest. This unblocks implementation without waiting for card research.
 2. **Scope**: full catalog — all 32 animal cards and all 10 spirit cards.
 3. **Replacing spirits** (e.g. lion rescoring fields): the replaced base category
    shows **0** and the **Spirit row shows the full replacement score**. Additive
@@ -86,11 +87,11 @@ Per CLAUDE.md, **step 0 of execution is copying this plan to
 ## Files
 
 **New:**
-- `planning/harmonies-cards-reference.md` — researched card data: 32 animal cards
-  (name, cube count, track values in reveal order) + 10 spirit cards (name,
-  add-vs-replace, exact scoring text and numbers), each row with a source-confidence
-  marker (`ok` / `NEEDS-CHECK`), plus a short "how to verify against your cards"
-  note for the user.
+- `planning/harmonies-cards-reference.md` — **placeholder card data** (to be replaced
+  with real values later): 32 dummy animal cards (name, cube count, simple test
+  tracks) + 10 dummy spirit cards (name, add/replace, test scoring), clearly marked
+  as test data. Once the user provides real card values, this file and the code
+  catalogs are updated (data-only changes with no algorithm shifts).
 - `games/harmonies/animals.ts` — `ANIMAL_CARDS` catalog + `scoreAnimals(entries) →
   ScoreCategory`.
 - `games/harmonies/spirits.ts` — `SPIRIT_CARDS` catalog with per-spirit pure scoring
@@ -144,11 +145,12 @@ scoring logic and tests (must stay green unmodified).
 
 ## Execution order
 
-0. Copy this plan to `planning/harmonies-m3-plan.md`.
-1. **Research pass**: gather the 32 animal tracks + 10 spirit behaviors, write
-   `planning/harmonies-cards-reference.md` with confidence markers.
+0. Copy this plan to `planning/harmonies-m3-plan.md`. (done)
+1. **Create placeholder card catalogs**: Write `planning/harmonies-cards-reference.md`
+   with 32 temporary animal cards (each with a simple dummy track like `[1, 2, 3]`)
+   and 10 temporary spirits (mix of add/replace modes). Mark as test data clearly.
 2. `core/types` refinements; `games/harmonies/animals.ts` + `spirits.ts` catalogs
-   transcribed from the reference doc.
+   transcribed from the placeholder reference doc.
 3. Tests first: `animals.test.ts`, `spirits.test.ts`, entry-state/storage additions.
 4. `rules.ts` animals + spirit wiring until green; `config.ts` schema;
    `index.ts`.
@@ -156,6 +158,9 @@ scoring logic and tests (must stay green unmodified).
    `entry-screen.ts` integration, `app/main.ts`.
 6. Verification (below); fix until green; commit and push
    `-u origin claude/planning-folder-list-q0rt4q`.
+7. **After M3 ships**: User provides real card data; update
+   `planning/harmonies-cards-reference.md` and the catalogs (data-only edit), tests
+   verify consistency.
 
 ## Verification
 
@@ -168,6 +173,6 @@ scoring logic and tests (must stay green unmodified).
    replacing spirit → assert the replaced category shows 0 and Spirit shows the
    replacement → reload → board *and* cards persist → "Clear cards" resets config
    but not the board. Screenshot for sanity.
-4. Remind the user to verify `planning/harmonies-cards-reference.md` (especially any
-   `NEEDS-CHECK` rows) against the physical cards; corrections are data edits in the
-   reference doc + catalogs with tests keeping them consistent.
+4. Note: M3 ships with placeholder card data. Once the user provides real card values,
+   update `planning/harmonies-cards-reference.md` and transcribe into the catalogs
+   (data-only changes); the test structure will verify consistency.
