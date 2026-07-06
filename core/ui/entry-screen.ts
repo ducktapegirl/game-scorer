@@ -5,12 +5,12 @@
 // vision proposal later, and the editing path is identical.
 
 import { clearBoard, loadBoard, saveBoard } from "../storage";
-import type { BoardState, CellId, GameModule, TokenId } from "../types";
+import type { BoardState, CellId, ConfigFieldValue, GameModule, TokenId } from "../types";
 import { renderBoard } from "./board-view";
 import { emptyBoard, stackAt, validateSavedBoard, withStack } from "./entry-state";
 import { renderScore } from "./score-view";
 
-export function mountEntryScreen<B extends BoardState, C>(
+export function mountEntryScreen<B extends BoardState, C extends Record<string, ConfigFieldValue>>(
   root: HTMLElement,
   module: GameModule<B, C>,
   config: C,
