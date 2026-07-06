@@ -1,41 +1,33 @@
-// The whole photo→BoardState pipeline (spec §8), composed from the pure
-// pieces: corner homography → per-cell normalized centers mapped into photo
-// space → median patch sample → Lab nearest-swatch classification → a
-// proposed board plus per-cell debug data for the calibration view. No
-// warp: sampling directly at mapped centers is the same math with less code.
+// The whole photo→BoardState pipeline (spec §8, hardened in M4.5): the user
+// taps the centers of the grid's four corner tiles; the homography from
+// those cells' layout centers to the taps is exact for every other cell
+// (the layout models the physical grid up to an affine transform, which the
+// homography absorbs). Each cell is then patch-sampled and classified by
+// per-pixel plurality vote. No warp, no margins, no DOM.
 
-import type { BoardState, BoardTopology, CellId, GameVisionSpec, Lab, TokenDef } from "../types";
-import { classifyColor, type Classification } from "./classify";
-import { rgbToLab, type Rgb } from "./color";
+import type { BoardState, BoardTopology, CellId, GameVisionSpec, TokenDef } from "../types";
+import { classifyPatch, type PatchClassification } from "./classify";
 import { applyHomography, computeHomography, type Point } from "./homography";
-import { samplePatch, type PixelSource } from "./sample";
+import { collectPatch, type PixelSource } from "./sample";
 
-// The four board corners as tapped in the photo, in this order.
-export type CornerTaps = readonly [Point, Point, Point, Point]; // TL, TR, BR, BL
-const UNIT_SQUARE: CornerTaps = [
-  { x: 0, y: 0 },
-  { x: 1, y: 0 },
-  { x: 1, y: 1 },
-  { x: 0, y: 1 },
-];
+// The four corner-tile taps, in the calibrationCells order (TL, TR, BR, BL).
+export type CornerTaps = readonly [Point, Point, Point, Point];
 
 // Patch radius as a fraction of the distance to the nearest adjacent cell
-// in photo pixels — adapts to photo scale and perspective while staying
-// well inside the token.
-const PATCH_RADIUS_RATIO = 0.2;
+// in photo pixels — wide enough that token pixels outvote an animal cube
+// sitting at the center, while staying on the token.
+const PATCH_RADIUS_RATIO = 0.3;
 
 export interface CellDebug {
   cellId: CellId;
   point: Point; // sample center in photo pixels
   radius: number;
-  rgb: Rgb;
-  lab: Lab;
-  classification: Classification;
+  classification: PatchClassification;
 }
 
 export interface ProposeOptions<V extends string> {
   image: PixelSource;
-  corners: CornerTaps;
+  taps: CornerTaps;
   topology: BoardTopology;
   vocabulary: readonly TokenDef[];
   vision: GameVisionSpec<V>;
@@ -48,15 +40,18 @@ export interface Proposal<V extends string> {
 }
 
 export function proposeBoard<V extends string>(opts: ProposeOptions<V>): Proposal<V> {
-  const { image, corners, topology, vocabulary, vision, variant } = opts;
-  const centerNorm = topology.cellCenterNorm;
-  if (!centerNorm) {
-    throw new Error("Topology has no cellCenterNorm — this game cannot use the photo pipeline");
+  const { image, taps, topology, vocabulary, vision, variant } = opts;
+  const calibration = topology.calibrationCells;
+  if (!calibration) {
+    throw new Error("Topology has no calibrationCells — this game cannot use the photo pipeline");
   }
 
-  const h = computeHomography(UNIT_SQUARE, corners);
+  const h = computeHomography(
+    calibration.map((id) => topology.cellCenter(id)) as [Point, Point, Point, Point],
+    taps,
+  );
   const points = new Map<CellId, Point>(
-    topology.cells.map((id) => [id, applyHomography(h, centerNorm(id))]),
+    topology.cells.map((id) => [id, applyHomography(h, topology.cellCenter(id))]),
   );
 
   const emptySwatches = vision.emptySwatches(variant);
@@ -74,10 +69,9 @@ export function proposeBoard<V extends string>(opts: ProposeOptions<V>): Proposa
       ? nearest * PATCH_RADIUS_RATIO
       : Math.min(image.width, image.height) * 0.01;
 
-    const rgb = samplePatch(image, point, radius);
-    const lab = rgbToLab(rgb);
-    const classification = classifyColor(lab, vocabulary, emptySwatches);
-    debug.push({ cellId: id, point, radius, rgb, lab, classification });
+    const pixels = collectPatch(image, point, radius);
+    const classification = classifyPatch(pixels, vocabulary, emptySwatches, vision.ignoreSwatches);
+    debug.push({ cellId: id, point, radius, classification });
 
     if (classification.token !== null) {
       board.cells.push({ id, stack: vision.proposedStack(classification.token) });

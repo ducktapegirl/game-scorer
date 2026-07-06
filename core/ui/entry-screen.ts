@@ -99,8 +99,8 @@ export function mountEntryScreen<B extends BoardState, C extends Record<string, 
       }),
     );
     // Photo-based entry (M4) is offered only when the game supplies vision
-    // data and photo-space geometry for this variant.
-    if (module.vision && module.board.topology(b.boardSide).cellCenterNorm) {
+    // data and calibration reference cells for this variant.
+    if (module.vision && module.board.topology(b.boardSide).calibrationCells) {
       controls.append(
         " ",
         button("Score from photo", () => {
