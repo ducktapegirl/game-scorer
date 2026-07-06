@@ -12,7 +12,7 @@ describe("Animal Cards", () => {
     for (const card of ANIMAL_CARDS) {
       expect(card.track.length).toBeGreaterThan(0);
       for (let i = 1; i < card.track.length; i++) {
-        expect(card.track[i]).toBeGreaterThan(card.track[i - 1]);
+        expect(card.track[i]!).toBeGreaterThan(card.track[i - 1]!);
       }
     }
   });

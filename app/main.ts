@@ -3,6 +3,5 @@
 
 import { mountEntryScreen } from "../core/ui/entry-screen";
 import { harmonies } from "../games/harmonies";
-import { EMPTY_CONFIG } from "../games/harmonies/config";
 
-mountEntryScreen(document.getElementById("app")!, harmonies, EMPTY_CONFIG);
+mountEntryScreen(document.getElementById("app")!, harmonies, harmonies.emptyConfig);

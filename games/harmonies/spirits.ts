@@ -18,7 +18,6 @@ export interface SpiritCard {
 const spiritScores = {
   spi_001: (board: HarmoniesBoardState) => {
     // Owl (add): +1 per bush (h1 green)
-    const topo = topology(board.boardSide);
     const bushes = board.cells.filter((c) => c.stack[0] === "green" && c.stack.length === 1);
     return { points: bushes.length, cells: bushes.map((c) => c.id) };
   },
@@ -97,7 +96,7 @@ const spiritScores = {
     return { points: greens.length, cells: greens.map((c) => c.id) };
   },
 
-  spi_010: (board: HarmoniesBoardState) => {
+  spi_010: () => {
     // Badger (replace animals): handled in rules.ts (config-based)
     // This is a placeholder; actual implementation depends on config
     return { points: 0, cells: [] };

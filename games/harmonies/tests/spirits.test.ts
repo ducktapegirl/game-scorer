@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { SPIRIT_CARDS, applySpirit } from "../spirits";
-import { boardWith, scoreBoard } from "./helpers";
+import { boardWith } from "./helpers";
 import { score } from "../rules";
 
 describe("Spirit Cards", () => {
