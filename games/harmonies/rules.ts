@@ -86,7 +86,7 @@ export function score(board: HarmoniesBoardState, config: HarmoniesConfig): Scor
   const animals = scoreAnimals(config.animalCards);
 
   // Score base categories, then apply spirit modifier
-  let baseCategories = [trees, mountains, fields, buildings, water, animals];
+  const baseCategories = [trees, mountains, fields, buildings, water, animals];
   const { spirit, modifiedBreakdown } = applySpirit(config.spirit, board, baseCategories);
 
   return {

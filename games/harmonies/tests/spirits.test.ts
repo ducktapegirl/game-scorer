@@ -94,6 +94,30 @@ describe("Spirit Cards", () => {
     expect(spirit.points).toBe(3); // 1 + 1 + 1 (three mountain cells)
   });
 
+  it("Badger (replace trees): flat 3 per tree, and does not touch animal card points", () => {
+    // Two trees of different heights: base = 1 (bush) + 7 (h3) = 8.
+    // Badger replaces trees with flat 3 each = 6, regardless of height.
+    // Animal card points must survive (regression guard: Badger used to
+    // replace "animals" and silently zero them).
+    const board = boardWith("A", [
+      [0, 0, "green"], // bush, base 1
+      [1, 0, "brown", "brown", "green"], // h3 tree, base 7
+    ]);
+    const breakdown = score(board, {
+      spirit: "spi_010",
+      animalCards: [{ id: "ani_001", count: 2 }], // Ant: 3 points
+    });
+
+    const trees = breakdown.categories.find((c) => c.id === "trees")!;
+    const spirit = breakdown.categories.find((c) => c.id === "spirit")!;
+    const animals = breakdown.categories.find((c) => c.id === "animals")!;
+
+    expect(trees.points).toBe(0); // replaced
+    expect(spirit.points).toBe(6); // 2 trees * 3
+    expect(animals.points).toBe(3); // animal cards untouched
+    expect(breakdown.total).toBe(9); // 6 + 3
+  });
+
   it("spirit unknown id throws", () => {
     const board = boardWith("A", []);
     expect(() => applySpirit("unknown_spirit", board, [])).toThrow(/Unknown spirit card/);

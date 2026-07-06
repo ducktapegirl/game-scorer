@@ -60,7 +60,7 @@ For a card with track `[1, 3, 5]`:
 | spi_007 | Stork (add) | add | — | +1 point per building | Buildings unchanged; spirit adds bonus |
 | spi_008 | Cat (replace) | replace | buildings | 10 pts per building with 2+ neighbor colors; 5 pts with 1 color | Easier threshold for buildings |
 | spi_009 | Squirrel (add) | add | — | +1 point per tree | Trees unchanged; spirit adds bonus |
-| spi_010 | Badger (replace) | replace | animals | +3 points per animal card placed | Animal scoring increases |
+| spi_010 | Badger (replace) | replace | trees | 3 pts per tree (green-topped stack), any height | Flat rescore of trees, ignoring height |
 
 **Mode interpretation:**
 - **add**: Spirit points are in ADDITION to normal scoring. Base categories unchanged; spirit row gets the bonus.

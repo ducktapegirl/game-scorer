@@ -47,11 +47,16 @@ export const ANIMAL_CARDS: AnimalCard[] = [
 
 export function scoreAnimals(entries: HarmoniesConfig["animalCards"]): ScoreCategory {
   const catalog = new Map(ANIMAL_CARDS.map((c) => [c.id, c]));
+  const seen = new Set<string>();
   let points = 0;
 
   for (const entry of entries) {
     const card = catalog.get(entry.id);
     if (!card) throw new Error(`Unknown animal card: ${entry.id}`);
+    if (seen.has(entry.id)) {
+      throw new Error(`Duplicate animal card entry: ${entry.id}`);
+    }
+    seen.add(entry.id);
     if (entry.count < 0 || entry.count > card.track.length) {
       throw new Error(`Animal card ${entry.id}: cubes out of range [0, ${card.track.length}]`);
     }

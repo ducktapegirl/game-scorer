@@ -55,4 +55,13 @@ describe("Animal Cards", () => {
     expect(() => scoreAnimals([{ id: "ani_005", count: 3 }])).toThrow(/out of range/);
     expect(() => scoreAnimals([{ id: "ani_005", count: -1 }])).toThrow(/out of range/);
   });
+
+  it("scoreAnimals throws on duplicate card entries", () => {
+    expect(() =>
+      scoreAnimals([
+        { id: "ani_001", count: 1 },
+        { id: "ani_001", count: 2 },
+      ]),
+    ).toThrow(/Duplicate animal card/);
+  });
 });
