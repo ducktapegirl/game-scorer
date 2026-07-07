@@ -15,8 +15,11 @@ export const TOKEN_COLORS: readonly TokenColor[] = [
 // Each token's tones (base color + printed pattern) in sRGB, kept in RGB
 // because that is what the photo screen's debug table reports for
 // recalibration. Measured from resources/test_image1.jpg (M4.5 calibration,
-// 23/23 cells verified) — EXCEPT brown, which does not appear in that photo
-// and stays a PLACEHOLDER until a photo with a brown-topped stack exists.
+// 23/23 cells verified) — except brown, measured from the side-B island
+// photos (resources/test_image_islands*.jpg), the first photos with
+// brown-topped stacks. Brown ships its dark tone only: the measured light
+// cluster is a specular highlight within a few ΔE of empty-hex cream and
+// steals votes from genuinely empty cells.
 export const TOKEN_TONES_RGB: Record<TokenColor, Rgb[]> = {
   blue: [
     { r: 12, g: 71, b: 89 }, // deep teal base
@@ -26,7 +29,7 @@ export const TOKEN_TONES_RGB: Record<TokenColor, Rgb[]> = {
     { r: 111, g: 96, b: 90 }, // warm shaded face
     { r: 116, g: 115, b: 115 }, // neutral face
   ],
-  brown: [{ r: 140, g: 90, b: 55 }], // PLACEHOLDER — not in the reference photo
+  brown: [{ r: 128, g: 86, b: 77 }], // dark tone only (see note above)
   green: [
     { r: 110, g: 95, b: 18 }, // olive base
     { r: 168, g: 153, b: 93 }, // light leaf print
