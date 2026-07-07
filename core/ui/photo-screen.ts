@@ -46,6 +46,10 @@ export function renderPhotoScreen<B extends BoardState>(
   let bitmap: ImageBitmap | null = null;
   let canvas: HTMLCanvasElement | null = null;
   let corners: Point[] = [];
+  // Quarter-turn clockwise rotations applied to the photo before anything
+  // else (0/90/180/270). Some cameras store the raster sideways, and the
+  // corner prompts assume the user sees the board upright.
+  let rotation = 0;
   let result: { board: BoardState<B["boardSide"]>; debug: CellDebug[] } | null = null;
 
   function button(label: string, onClick: () => void): HTMLButtonElement {
@@ -62,10 +66,37 @@ export function renderPhotoScreen<B extends BoardState>(
     return el;
   }
 
+  // Size the canvas for the current rotation and paint the (rotated) photo.
+  // Everything downstream — taps, sampling, debug overlays — works in this
+  // rotated canvas space, so the vision pipeline never sees the rotation.
+  function paintPhoto(): CanvasRenderingContext2D {
+    const scale = Math.min(1, MAX_CANVAS_SIDE / Math.max(bitmap!.width, bitmap!.height));
+    const sideways = rotation % 180 !== 0;
+    canvas!.width = Math.round((sideways ? bitmap!.height : bitmap!.width) * scale);
+    canvas!.height = Math.round((sideways ? bitmap!.width : bitmap!.height) * scale);
+    const ctx = canvas!.getContext("2d")!;
+    ctx.save();
+    ctx.translate(canvas!.width / 2, canvas!.height / 2);
+    ctx.rotate((rotation * Math.PI) / 180);
+    const drawW = sideways ? canvas!.height : canvas!.width;
+    const drawH = sideways ? canvas!.width : canvas!.height;
+    ctx.drawImage(bitmap!, -drawW / 2, -drawH / 2, drawW, drawH);
+    ctx.restore();
+    return ctx;
+  }
+
+  function rotate(quarterTurns: number): void {
+    rotation = (rotation + quarterTurns * 90 + 360) % 360;
+    // Taps are positions in the old orientation; the corner correspondence
+    // changes with it, so restart the tapping step.
+    corners = [];
+    result = null;
+    render();
+  }
+
   function redrawCanvas(): void {
     if (!canvas || !bitmap) return;
-    const ctx = canvas.getContext("2d")!;
-    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    const ctx = paintPhoto();
     const markerRadius = Math.max(4, canvas.width / 150);
     for (const [i, corner] of corners.entries()) {
       ctx.beginPath();
@@ -88,10 +119,7 @@ export function renderPhotoScreen<B extends BoardState>(
 
   async function loadFile(file: File): Promise<void> {
     bitmap = await createImageBitmap(file);
-    const scale = Math.min(1, MAX_CANVAS_SIDE / Math.max(bitmap.width, bitmap.height));
     canvas = document.createElement("canvas");
-    canvas.width = Math.round(bitmap.width * scale);
-    canvas.height = Math.round(bitmap.height * scale);
     canvas.addEventListener("click", (event) => {
       if (corners.length >= 4 || !canvas) return;
       const rect = canvas.getBoundingClientRect();
@@ -103,14 +131,14 @@ export function renderPhotoScreen<B extends BoardState>(
       render();
     });
     corners = [];
+    rotation = 0;
     result = null;
     render();
   }
 
   function readBoard(): void {
     // Repaint the clean photo first so sampling never reads marker overlays.
-    const ctx = canvas!.getContext("2d")!;
-    ctx.drawImage(bitmap!, 0, 0, canvas!.width, canvas!.height);
+    const ctx = paintPhoto();
     const image = ctx.getImageData(0, 0, canvas!.width, canvas!.height);
     result = proposeBoard({
       image,
@@ -173,11 +201,21 @@ export function renderPhotoScreen<B extends BoardState>(
 
     if (!canvas) return;
 
+    const rotateControls = document.createElement("p");
+    rotateControls.append(
+      button("Rotate left", () => rotate(-1)),
+      " ",
+      button("Rotate right", () => rotate(1)),
+      " (rotating restarts the corner taps)",
+    );
+    root.append(rotateControls);
+
     if (corners.length < 4) {
       root.append(
         p(
-          `Tap the center of the ${CORNER_PROMPTS[corners.length]!} corner tile of the hex ` +
-            `grid — the tile itself, or the token sitting on it (${corners.length} of 4 tapped).`,
+          `Rotate the photo until the board is upright, then tap the center of the ` +
+            `${CORNER_PROMPTS[corners.length]!} corner tile of the hex grid — the tile ` +
+            `itself, or the token sitting on it (${corners.length} of 4 tapped).`,
         ),
       );
     }
