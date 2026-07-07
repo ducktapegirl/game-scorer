@@ -33,6 +33,15 @@ const AXIAL_DIRECTIONS = [
   [0, 1],
 ] as const;
 
+// Photo calibration reference points (M4.5): the user taps the centers of
+// the grid's four corner tiles. Both sides' corner cells form a rectangle in
+// cellCenter layout space, so the homography fitted through them is exact
+// for every other cell — no board-margin estimation exists or is needed.
+const CALIBRATION_CELLS: Record<BoardSide, readonly [CellId, CellId, CellId, CellId]> = {
+  A: ["0,0", "4,-2", "4,2", "0,4"], // TL, TR, BR, BL
+  B: ["0,0", "6,-3", "6,0", "0,3"],
+};
+
 function buildTopology(side: BoardSide): BoardTopology {
   const cells: CellId[] = [];
   COLUMN_HEIGHTS[side].forEach((height, q) => {
@@ -62,6 +71,7 @@ function buildTopology(side: BoardSide): BoardTopology {
       const { q, r } = parseCellId(id);
       return { x: 1.5 * q, y: Math.sqrt(3) * (r + q / 2) };
     },
+    calibrationCells: CALIBRATION_CELLS[side],
   };
 }
 
