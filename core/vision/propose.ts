@@ -7,7 +7,7 @@
 
 import type { BoardState, BoardTopology, CellId, GameVisionSpec, TokenDef } from "../types";
 import { classifyPatch, type PatchClassification } from "./classify";
-import { applyHomography, computeHomography, type Point } from "./homography";
+import { applyHomography, computeHomography, type Homography, type Point } from "./homography";
 import { collectPatch, type PixelSource } from "./sample";
 
 // The four corner-tile taps, in the calibrationCells order (TL, TR, BR, BL).
@@ -37,6 +37,9 @@ export interface ProposeOptions<V extends string> {
 export interface Proposal<V extends string> {
   board: BoardState<V>;
   debug: CellDebug[];
+  // The calibration homography (layout → photo pixels), so callers can map
+  // any cell's outline into photo space for the M5 correction overlay.
+  homography: Homography;
 }
 
 export function proposeBoard<V extends string>(opts: ProposeOptions<V>): Proposal<V> {
@@ -77,5 +80,5 @@ export function proposeBoard<V extends string>(opts: ProposeOptions<V>): Proposa
       board.cells.push({ id, stack: vision.proposedStack(classification.token) });
     }
   }
-  return { board, debug };
+  return { board, debug, homography: h };
 }

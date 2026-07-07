@@ -7,8 +7,9 @@
 import { clearBoard, clearConfig, loadBoard, loadConfig, saveBoard, saveConfig } from "../storage";
 import type { BoardState, CellId, ConfigFieldValue, GameModule, TokenId } from "../types";
 import { renderBoard } from "./board-view";
+import { renderCellEditor } from "./cell-editor";
 import { renderConfig } from "./config-view";
-import { emptyBoard, stackAt, validateSavedBoard, validateSavedConfig, withStack } from "./entry-state";
+import { emptyBoard, validateSavedBoard, validateSavedConfig, withStack } from "./entry-state";
 import { renderPhotoScreen } from "./photo-screen";
 import { renderScore } from "./score-view";
 
@@ -20,7 +21,6 @@ export function mountEntryScreen<B extends BoardState, C extends Record<string, 
   let config: C =
     validateSavedConfig<C>(loadConfig(module.id), module.configSchema) ?? module.emptyConfig;
   let selected: CellId | null = null;
-  let pendingToken: TokenId | null = null;
   let photoMode = false;
 
   // A single-variant game has nothing to ask; multi-variant games (Harmonies
@@ -43,7 +43,6 @@ export function mountEntryScreen<B extends BoardState, C extends Record<string, 
   function applyStack(stack: TokenId[]): void {
     setBoard(withStack(board!, selected!, stack));
     selected = null;
-    pendingToken = null;
     render();
   }
 
@@ -83,7 +82,6 @@ export function mountEntryScreen<B extends BoardState, C extends Record<string, 
           clearBoard(module.id);
           board = null;
           selected = null;
-          pendingToken = null;
           render();
         }),
         " ",
@@ -93,7 +91,6 @@ export function mountEntryScreen<B extends BoardState, C extends Record<string, 
       button("Clear board", () => {
         if (!confirm("Remove all entered tokens?")) return;
         selected = null;
-        pendingToken = null;
         setBoard(emptyBoard<B>(b.boardSide));
         render();
       }),
@@ -125,7 +122,6 @@ export function mountEntryScreen<B extends BoardState, C extends Record<string, 
         }
         photoMode = false;
         selected = null;
-        pendingToken = null;
         setBoard(proposed as B);
         render();
       },
@@ -137,47 +133,19 @@ export function mountEntryScreen<B extends BoardState, C extends Record<string, 
   }
 
   function renderEditor(b: B): HTMLElement {
-    const editor = document.createElement("div");
     if (selected === null) {
+      const editor = document.createElement("div");
       const hint = document.createElement("p");
       hint.textContent = "Tap a cell to edit it.";
       editor.append(hint);
       return editor;
     }
-
-    const current = stackAt(b, selected);
-    const heading = document.createElement("p");
-    heading.textContent = `Cell ${selected} — current: ${
-      current.length > 0 ? current.join(", ") + " (bottom to top)" : "empty"
-    }`;
-    editor.append(heading);
-
-    const tokenButtons = document.createElement("p");
-    for (const token of module.board.tokenVocabulary) {
-      tokenButtons.append(
-        button(token.label, () => {
-          const choices = module.board.stackChoices(token.id);
-          if (choices.length === 1) {
-            applyStack(choices[0]!.stack);
-          } else {
-            pendingToken = token.id;
-            render();
-          }
-        }),
-        " ",
-      );
-    }
-    tokenButtons.append(button("Empty", () => applyStack([])));
-    editor.append(tokenButtons);
-
-    if (pendingToken !== null) {
-      const choiceButtons = document.createElement("p");
-      for (const choice of module.board.stackChoices(pendingToken)) {
-        choiceButtons.append(button(choice.label, () => applyStack(choice.stack)), " ");
-      }
-      editor.append(choiceButtons);
-    }
-    return editor;
+    return renderCellEditor<B>({
+      module,
+      board: b,
+      cellId: selected,
+      onApply: applyStack,
+    });
   }
 
   function renderConfigSection(): HTMLElement {
@@ -221,7 +189,6 @@ export function mountEntryScreen<B extends BoardState, C extends Record<string, 
         selected,
         onTap: (id) => {
           selected = id;
-          pendingToken = null;
           render();
         },
       }),

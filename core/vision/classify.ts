@@ -16,6 +16,24 @@ export interface PatchClassification {
   runnerUp: { token: TokenId | null; voteShare: number } | null;
 }
 
+// Thresholds for flagging a classification as needing human review in the M5
+// correction UI. Starting points tuned against the three real photos during
+// verification; island photo B1's documented misread at cell 1,2 must flag.
+export const UNCERTAIN_VOTE_SHARE = 0.5; // winner won less than half the vote
+export const UNCERTAIN_RUNNERUP_MARGIN = 0.15; // runner-up this close to the winner
+export const UNCERTAIN_IGNORED_SHARE = 0.6; // a cube covered most of the patch
+
+// Whether a classification is shaky enough to surface a "?" flag. Never blocks
+// acceptance — it only draws the user's eye. The boundary is deliberately
+// inclusive on the runner-up margin (a tie-ish read flags) and exclusive on the
+// two share thresholds (exactly at the line is treated as confident).
+export function isUncertain(c: PatchClassification): boolean {
+  if (c.voteShare < UNCERTAIN_VOTE_SHARE) return true;
+  if (c.runnerUp && c.voteShare - c.runnerUp.voteShare <= UNCERTAIN_RUNNERUP_MARGIN) return true;
+  if (c.ignoredShare > UNCERTAIN_IGNORED_SHARE) return true;
+  return false;
+}
+
 // Internal vote-tally keys; token ids are plain strings, so reserved labels
 // use a prefix no TokenId contains.
 const EMPTY_LABEL = "\0empty";
