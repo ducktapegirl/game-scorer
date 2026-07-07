@@ -12,28 +12,33 @@ import type { BoardSide } from "./topology";
 // Empty-cell tones per side: what an empty hex space shows. Side A values
 // are measured from resources/test_image1.jpg — but that board was FULL, so
 // they come from the pedestal slivers visible between tokens (shadowed
-// cream). Validate/retune with a photo that has genuinely empty cells. Side
-// B is a PLACEHOLDER until a side-B photo exists.
+// cream); retune when a side-A photo with genuinely empty cells exists.
+// Side B values are measured from real empty hexes in the island photos
+// (resources/test_image_islands*.jpg — 5 empty cells across both).
 export const EMPTY_TONES_RGB: Record<BoardSide, Rgb[]> = {
   A: [
     { r: 178, g: 146, b: 114 }, // pedestal cream (shadowed)
     { r: 158, g: 148, b: 135 }, // pedestal cream (cooler shade)
   ],
-  // PLACEHOLDER — no side-B photo yet
   B: [
-    { r: 222, g: 208, b: 180 },
-    { r: 175, g: 195, b: 205 },
+    { r: 182, g: 169, b: 158 }, // lit cream hex
+    { r: 141, g: 129, b: 118 }, // shadowed cream hex
   ],
 };
 
 // Things that sit ON TOP of tokens without being tokens: translucent animal
 // cubes. Pixels matching these are discarded from the vote. The amber cube
-// is translucent, so it shows two tones depending on what's underneath —
-// both measured from resources/test_image1.jpg. The white cube is a
+// is translucent, so its tone depends on what's underneath and how the light
+// hits it: two tones measured from resources/test_image1.jpg, two more from
+// the island photos (cubes over gray/brown/green). A measured near-black
+// shadow cluster is deliberately NOT included — it matches every deep shadow
+// on the board and discards good token pixels. The white cube is a
 // PLACEHOLDER until one appears in a photo.
 export const CUBE_TONES_RGB: Rgb[] = [
   { r: 113, g: 59, b: 28 }, // amber over warm tokens
   { r: 39, g: 87, b: 100 }, // amber over blue tokens
+  { r: 206, g: 133, b: 15 }, // amber lit face
+  { r: 148, g: 123, b: 101 }, // milky amber over gray/brown
   { r: 240, g: 240, b: 235 }, // PLACEHOLDER white cube
 ];
 

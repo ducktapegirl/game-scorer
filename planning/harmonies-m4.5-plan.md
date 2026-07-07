@@ -114,3 +114,46 @@ the real photo. Engine (`rules.ts`) untouched; plain UI constraint holds.
 - Side B calibration and white-cube measurement (need photos of those).
 - Parallax/height compensation for angled photos.
 - Depth annotation, photo-overlay correction (M5); styling (still plain).
+
+---
+
+## Addendum — Side-B calibration from real island photos
+
+`resources/test_image_islands.jpg` (B1) and `resources/test_image_islands2.jpg`
+(B2) arrived after the side-A work, so side B is calibrated with the same
+method: transcribe each board from labeled homography overlays, measure
+swatches from the transcribed cells, validate with the app's own
+`classifyPatch` on all cells of **both island photos plus the side-A photo**
+(regression), then run both photos through the real UI end to end.
+
+What the photos supply:
+
+- **Side-B empty tones** — both photos have genuinely empty hexes (5 total),
+  so `EMPTY_TONES_RGB.B` is measured from real empty-cell patches, unlike
+  side A's pedestal-sliver approximation. Placeholder status removed.
+- **Brown token tone** — B2 has two brown-topped stacks; the measured dark
+  tone replaces the brown placeholder. The k-means light cluster
+  (196,180,166) is deliberately **dropped**: it comes from specular
+  highlights and sits within a few ΔE of empty cream, where it steals votes
+  from genuinely empty cells.
+- **Two more amber-cube tones** — cubes here sit on gray/brown/green tokens,
+  adding a lit-face tone (206,133,15) and a milky over-light-token tone
+  (148,123,101) to the ignore list. A measured near-black shadow cluster is
+  **dropped** — it matches every deep shadow on the board and discards good
+  token pixels (it pushed one cell to a misread during tuning).
+- The **white cube** placeholder stays: still no white cube in any photo.
+
+Known imperfection (accepted, documented): in B1, cell `1,0` misreads as
+gray. Its corner-neighbor `0,0` is a 3-high stack (brown-brown-green), so
+the tap on that leaning token top skews the homography locally and `1,0`'s
+patch lands on the yellow token's shadowed edge. The debug row shows the
+weakness (≈50% vote, high ignored share) — exactly the signal the M5
+correction UI will surface; it is a one-tap fix in the M2 editor today.
+Patch-radius variants (0.25/0.35/0.4) were tried and all score worse than
+0.3 overall, so no radius change ships. Result: B1 24/25, B2 25/25,
+side-A photo still 23/23.
+
+EXIF note: B1 is stored rotated (orientation 8). This Chromium ignores EXIF
+for both `Image` and `createImageBitmap`, so scripts and app sample the same
+raster; browsers that do apply EXIF rotate taps and pixels together, which
+the homography absorbs. Nothing to fix in the app either way.
