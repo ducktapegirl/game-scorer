@@ -1,26 +1,28 @@
-// The photo-based board entry flow (M4, hardened M4.5): pick a photo → tap
-// the centers of the grid's four CORNER TILES → run core/vision's pipeline
-// → review the proposal + per-cell debug data → accept into the entry
-// screen. DOM glue only — all pipeline math lives in core/vision.
-// Browser-default UI, no CSS, per the plain-UI constraint. The
-// always-visible debug section is deliberate: it is the calibration tool
-// for tuning the game's swatches against real photos.
+// The photo-based board entry + correction flow (M4/M4.5 vision, M5
+// correction): pick a photo → tap the four corner tiles → run core/vision's
+// pipeline → CORRECT the proposal in place (tap a green/gray cell to cycle its
+// height, long-press or right-click any cell for the full editor, with
+// uncertain reads flagged "?") → accept into the entry screen, which scores.
+// DOM glue only; all pipeline math lives in core/vision and the geometry in
+// core/ui/photo-overlay. Browser-default UI, no CSS, per the plain-UI
+// constraint. The debug table (now collapsed) remains the swatch-calibration
+// readout.
 
-import type { BoardState, GameModule } from "../types";
-import { proposeBoard, type CellDebug, type CornerTaps } from "../vision/propose";
-import type { Point } from "../vision/homography";
-import { renderBoard } from "./board-view";
+import type { BoardState, CellId, GameModule, TokenId } from "../types";
+import { isUncertain } from "../vision/classify";
+import { applyHomography, type Point } from "../vision/homography";
+import { proposeBoard, type CellDebug, type CornerTaps, type Proposal } from "../vision/propose";
+import { cellLabel, renderBoard } from "./board-view";
+import { renderCellEditor } from "./cell-editor";
+import { stackAt, withStack } from "./entry-state";
+import { cellPolygons, hitTest } from "./photo-overlay";
+import { createPressGesture } from "./press-gesture";
 
 // Photos are capped to this long side before sampling — plenty for a 5%-of-
 // board-width sample patch, and keeps getImageData cheap on phones.
 const MAX_CANVAS_SIDE = 1600;
 
-const CORNER_PROMPTS = [
-  "top-left",
-  "top-right",
-  "bottom-right",
-  "bottom-left",
-] as const;
+const CORNER_PROMPTS = ["top-left", "top-right", "bottom-right", "bottom-left"] as const;
 
 // The photo flow needs only the config-independent parts of the module.
 type VisualGameModule<B extends BoardState> = Pick<GameModule<B, never>, "id" | "board" | "vision">;
@@ -41,6 +43,7 @@ export function renderPhotoScreen<B extends BoardState>(
   if (!vision || !topology.calibrationCells) {
     throw new Error(`${module.id} does not support photo entry`);
   }
+  const depthTokens = new Set<TokenId>(vision.depthTokens ?? []);
 
   const root = document.createElement("div");
   let bitmap: ImageBitmap | null = null;
@@ -50,7 +53,16 @@ export function renderPhotoScreen<B extends BoardState>(
   // else (0/90/180/270). Some cameras store the raster sideways, and the
   // corner prompts assume the user sees the board upright.
   let rotation = 0;
-  let result: { board: BoardState<B["boardSide"]>; debug: CellDebug[] } | null = null;
+  // Set once "Read board" runs; carries the homography + per-cell debug.
+  let proposal: Proposal<B["boardSide"]> | null = null;
+  // The board being corrected — starts as a copy of proposal.board, then the
+  // user's edits mutate it. Kept separate so the debug data stays pristine.
+  let workingBoard: BoardState<B["boardSide"]> | null = null;
+  // Cells the classifier was unsure about; a "?" marks them until the user
+  // touches or confirms them. Never blocks acceptance.
+  let flags = new Set<CellId>();
+  // The cell whose full editor is open (via long-press / right-click), if any.
+  let editing: CellId | null = null;
 
   function button(label: string, onClick: () => void): HTMLButtonElement {
     const b = document.createElement("button");
@@ -65,6 +77,100 @@ export function renderPhotoScreen<B extends BoardState>(
     el.textContent = text;
     return el;
   }
+
+  // --- correction actions ---------------------------------------------------
+
+  // Tap on a depth token (green/gray): cycle its height through the game's
+  // stackChoices (1 → 2 → 3 → 1). Any other cell ignores taps (long-press to
+  // edit those). Touching a cell clears its uncertainty flag.
+  function tapCell(id: CellId): void {
+    if (!workingBoard) return;
+    const stack = stackAt(workingBoard, id);
+    const top = stack.at(-1);
+    if (top === undefined || !depthTokens.has(top)) return;
+    const choices = module.board.stackChoices(top);
+    if (choices.length <= 1) return;
+    const idx = choices.findIndex((c) => c.stack.join(",") === stack.join(","));
+    const next = choices[(idx + 1) % choices.length]!;
+    workingBoard = withStack(workingBoard, id, next.stack);
+    flags.delete(id);
+    editing = null;
+    render();
+  }
+
+  function pressCell(id: CellId): void {
+    if (!workingBoard) return;
+    editing = id;
+    render();
+  }
+
+  function applyEdit(stack: TokenId[]): void {
+    if (editing === null || !workingBoard) return;
+    workingBoard = withStack(workingBoard, editing, stack);
+    flags.delete(editing);
+    editing = null;
+    render();
+  }
+
+  function confirmCell(): void {
+    if (editing === null) return;
+    flags.delete(editing);
+    editing = null;
+    render();
+  }
+
+  // --- gesture plumbing -----------------------------------------------------
+
+  // Wire one tap surface (the photo canvas or the SVG board) to the shared
+  // gesture discriminator. The cell under the pointer is resolved at press
+  // start and remembered until the gesture resolves.
+  function wireGestures(
+    el: HTMLElement | SVGElement,
+    resolveCell: (e: PointerEvent) => CellId | null,
+  ): void {
+    let cell: CellId | null = null;
+    const gesture = createPressGesture({
+      onGesture: (ev) => {
+        if (cell === null) return;
+        if (ev.type === "tap") tapCell(cell);
+        else if (ev.type === "press") pressCell(cell);
+      },
+    });
+    el.addEventListener("pointerdown", (e) => {
+      cell = resolveCell(e as PointerEvent);
+      gesture.pointerDown(e as PointerEvent);
+    });
+    el.addEventListener("pointermove", (e) => gesture.pointerMove(e as PointerEvent));
+    el.addEventListener("pointerup", () => gesture.pointerUp());
+    el.addEventListener("pointercancel", () => gesture.pointerUp());
+    el.addEventListener("pointerleave", () => gesture.pointerUp());
+    el.addEventListener("contextmenu", (e) => e.preventDefault());
+    // Swallow the synthetic click a long press emits so it doesn't double-fire.
+    el.addEventListener("click", (e) => {
+      if (gesture.shouldSuppressClick()) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    });
+  }
+
+  function canvasCell(e: PointerEvent): CellId | null {
+    if (!workingBoard || !proposal || !canvas) return null;
+    const rect = canvas.getBoundingClientRect();
+    const point: Point = {
+      x: ((e.clientX - rect.left) / rect.width) * canvas.width,
+      y: ((e.clientY - rect.top) / rect.height) * canvas.height,
+    };
+    return hitTest(cellPolygons(topology, proposal.homography), point);
+  }
+
+  function svgCell(e: PointerEvent): CellId | null {
+    const target = e.target as Element | null;
+    const group = target?.closest("g[data-cell-id]") as SVGGElement | null;
+    return group?.dataset.cellId ?? null;
+  }
+
+  // --- canvas drawing -------------------------------------------------------
 
   // Size the canvas for the current rotation and paint the (rotated) photo.
   // Everything downstream — taps, sampling, debug overlays — works in this
@@ -90,49 +196,80 @@ export function renderPhotoScreen<B extends BoardState>(
     // Taps are positions in the old orientation; the corner correspondence
     // changes with it, so restart the tapping step.
     corners = [];
-    result = null;
+    proposal = null;
+    workingBoard = null;
+    flags = new Set();
+    editing = null;
     render();
   }
 
   function redrawCanvas(): void {
     if (!canvas || !bitmap) return;
     const ctx = paintPhoto();
-    const markerRadius = Math.max(4, canvas.width / 150);
-    for (const [i, corner] of corners.entries()) {
-      ctx.beginPath();
-      ctx.arc(corner.x, corner.y, markerRadius, 0, 2 * Math.PI);
-      ctx.fillStyle = "black";
-      ctx.fill();
-      ctx.fillText(String(i + 1), corner.x + markerRadius + 2, corner.y);
-    }
-    if (result) {
-      // Sample-point overlay: where each cell was read — the debug view for
-      // tuning the game's margin geometry.
-      ctx.strokeStyle = "black";
-      for (const cell of result.debug) {
+
+    if (!proposal || !workingBoard) {
+      // Corner-tap phase: number each tapped corner.
+      const markerRadius = Math.max(4, canvas.width / 150);
+      for (const [i, corner] of corners.entries()) {
         ctx.beginPath();
-        ctx.arc(cell.point.x, cell.point.y, cell.radius, 0, 2 * Math.PI);
-        ctx.stroke();
+        ctx.arc(corner.x, corner.y, markerRadius, 0, 2 * Math.PI);
+        ctx.fillStyle = "black";
+        ctx.fill();
+        ctx.fillText(String(i + 1), corner.x + markerRadius + 2, corner.y);
       }
+      return;
+    }
+
+    // Correction phase: draw each cell's outline mapped into photo space, its
+    // token label, and a "?" on flagged cells (with a heavier outline).
+    const polygons = cellPolygons(topology, proposal.homography);
+    const stacks = new Map(workingBoard.cells.map((c) => [c.id, c.stack]));
+    const baseLine = Math.max(1, canvas.width / 500);
+    ctx.fillStyle = "black";
+    ctx.strokeStyle = "black";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.font = `${Math.max(10, Math.round(canvas.width / 45))}px sans-serif`;
+    for (const { cellId, polygon } of polygons) {
+      const flagged = flags.has(cellId);
+      ctx.beginPath();
+      ctx.moveTo(polygon[0]!.x, polygon[0]!.y);
+      for (const pt of polygon.slice(1)) ctx.lineTo(pt.x, pt.y);
+      ctx.closePath();
+      ctx.lineWidth = flagged ? baseLine * 3 : baseLine;
+      ctx.stroke();
+
+      const center = applyHomography(proposal.homography, topology.cellCenter(cellId));
+      const label = cellLabel(stacks.get(cellId) ?? []);
+      const text = flagged ? (label ? `${label}?` : "?") : label;
+      if (text) ctx.fillText(text, center.x, center.y);
     }
   }
+
+  // --- lifecycle ------------------------------------------------------------
 
   async function loadFile(file: File): Promise<void> {
     bitmap = await createImageBitmap(file);
     canvas = document.createElement("canvas");
     canvas.addEventListener("click", (event) => {
-      if (corners.length >= 4 || !canvas) return;
+      // Corner-tap capture — inert once four corners are down (result phase).
+      if (corners.length >= 4 || !canvas || proposal) return;
       const rect = canvas.getBoundingClientRect();
       corners.push({
         x: ((event.clientX - rect.left) / rect.width) * canvas.width,
         y: ((event.clientY - rect.top) / rect.height) * canvas.height,
       });
-      result = null;
       render();
     });
+    // The canvas persists across renders, so its gesture listeners are wired
+    // once; they no-op until the correction phase (canvasCell returns null).
+    wireGestures(canvas, canvasCell);
     corners = [];
     rotation = 0;
-    result = null;
+    proposal = null;
+    workingBoard = null;
+    flags = new Set();
+    editing = null;
     render();
   }
 
@@ -140,7 +277,7 @@ export function renderPhotoScreen<B extends BoardState>(
     // Repaint the clean photo first so sampling never reads marker overlays.
     const ctx = paintPhoto();
     const image = ctx.getImageData(0, 0, canvas!.width, canvas!.height);
-    result = proposeBoard({
+    proposal = proposeBoard({
       image,
       taps: corners as unknown as CornerTaps,
       topology,
@@ -148,6 +285,14 @@ export function renderPhotoScreen<B extends BoardState>(
       vision: vision!,
       variant,
     });
+    workingBoard = {
+      boardSide: proposal.board.boardSide,
+      cells: proposal.board.cells.map((c) => ({ id: c.id, stack: [...c.stack] })),
+    };
+    flags = new Set(
+      proposal.debug.filter((d) => isUncertain(d.classification)).map((d) => d.cellId),
+    );
+    editing = null;
     render();
   }
 
@@ -182,25 +327,9 @@ export function renderPhotoScreen<B extends BoardState>(
     return table;
   }
 
-  function render(): void {
-    root.replaceChildren();
-    root.append(
-      p("Score from photo — pick a photo of the board, then tap the four corner tiles of the hex grid."),
-    );
-    const controls = document.createElement("p");
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = "image/*";
-    input.setAttribute("capture", "environment");
-    input.addEventListener("change", () => {
-      const file = input.files?.[0];
-      if (file) void loadFile(file);
-    });
-    controls.append(input, " ", button("Cancel", onCancel));
-    root.append(controls);
+  // --- render ---------------------------------------------------------------
 
-    if (!canvas) return;
-
+  function renderCornerPhase(): void {
     const rotateControls = document.createElement("p");
     rotateControls.append(
       button("Rotate left", () => rotate(-1)),
@@ -224,49 +353,102 @@ export function renderPhotoScreen<B extends BoardState>(
       tapControls.append(
         button("Undo tap", () => {
           corners.pop();
-          result = null;
           render();
         }),
         " ",
         button("Start over", () => {
           corners = [];
-          result = null;
           render();
         }),
         " ",
       );
     }
-    if (corners.length === 4 && !result) {
+    if (corners.length === 4) {
       tapControls.append(button("Read board", readBoard));
     }
-    root.append(tapControls, canvas);
+    root.append(tapControls, canvas!);
+    redrawCanvas();
+  }
+
+  function renderCorrectionPhase(proposed: Proposal<B["boardSide"]>): void {
+    root.append(
+      p(
+        "Correct the board — tap a green or gray cell to cycle its height; " +
+          "long-press or right-click any cell to change its color or mark it empty. " +
+          'Cells marked "?" were uncertain reads worth a check.',
+      ),
+    );
+    root.append(canvas!);
     redrawCanvas();
 
-    if (result) {
-      const proposal = result;
-      root.append(p(`Proposed board — ${proposal.board.cells.length} cells with tokens:`));
+    const flagged = [...flags].sort();
+    root.append(
+      p(flagged.length > 0 ? `Check these cells: ${flagged.join(" · ")}` : "No cells flagged."),
+    );
+
+    const svg = renderBoard({
+      topology,
+      tokens: module.board.tokenVocabulary,
+      board: workingBoard!,
+      selected: editing,
+      onTap: () => {}, // taps handled by the gesture wiring below
+    });
+    wireGestures(svg, svgCell);
+    root.append(svg);
+
+    if (editing !== null) {
       root.append(
-        renderBoard({
-          topology,
-          tokens: module.board.tokenVocabulary,
-          board: proposal.board,
-          selected: null,
-          onTap: () => {},
+        renderCellEditor<BoardState<B["boardSide"]>>({
+          module,
+          board: workingBoard!,
+          cellId: editing,
+          flagged: flags.has(editing),
+          onApply: applyEdit,
+          onConfirm: confirmCell,
+          onCancel: () => {
+            editing = null;
+            render();
+          },
         }),
       );
-      const accept = document.createElement("p");
-      accept.append(button("Use this board", () => onAccept(proposal.board)));
-      root.append(accept);
-      root.append(
-        p(
-          "Debug — per-cell vote results (circles on the photo mark the sample patches; " +
-            "low Vote % or a close runner-up means an uncertain cell; Mean RGB feeds " +
-            "swatch recalibration):",
-        ),
-      );
-      root.append(renderDebugTable(proposal.debug));
     }
-    return;
+
+    const accept = document.createElement("p");
+    accept.append(button("Use this board", () => onAccept(workingBoard!)));
+    root.append(accept);
+
+    const details = document.createElement("details");
+    const summary = document.createElement("summary");
+    summary.textContent =
+      "Debug — per-cell vote results (Mean RGB feeds swatch recalibration)";
+    details.append(summary, renderDebugTable(proposed.debug));
+    root.append(details);
+  }
+
+  function render(): void {
+    root.replaceChildren();
+    root.append(
+      p("Score from photo — pick a photo of the board, then tap the four corner tiles of the hex grid."),
+    );
+    const controls = document.createElement("p");
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.setAttribute("capture", "environment");
+    input.addEventListener("change", () => {
+      const file = input.files?.[0];
+      if (file) void loadFile(file);
+    });
+    controls.append(input, " ", button("Cancel", onCancel));
+    root.append(controls);
+
+    if (!canvas) return;
+
+    if (proposal && workingBoard) {
+      renderCorrectionPhase(proposal);
+    } else {
+      renderCornerPhase();
+    }
   }
 
   render();
