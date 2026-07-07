@@ -157,3 +157,25 @@ EXIF note: B1 is stored rotated (orientation 8). This Chromium ignores EXIF
 for both `Image` and `createImageBitmap`, so scripts and app sample the same
 raster; browsers that do apply EXIF rotate taps and pixels together, which
 the homography absorbs. Nothing to fix in the app either way.
+
+### Follow-up: board orientation + photo rotation
+
+User review of the first side-B run flagged the proposed board as flipped
+top-to-bottom versus the physical board (whose **flat edge is the top** in
+normal viewing; the rounded bulge is the bottom). Investigation: the app was
+never wrong — it renders whatever corner the user taps first as the
+top-left — but the verification scripts picked an arbitrary corner
+correspondence (grid corner `0,0` mapped to a bottom corner tile), which
+mirrors the rendered board. Fix: the scripts' tap order and transcriptions
+were redone in the natural flat-side-up orientation (photo B1's raster is
+already natural; photo B2's raster is the natural view rotated 90° CW).
+Scores are invariant under the relabeling (it's an isomorphism of the
+adjacency graph), and the same physical cell keeps the one documented
+misread — now addressed at its new id `1,2`.
+
+To let users get their photo upright before tapping (portrait shots,
+sideways EXIF rasters), the photo screen gains **Rotate left / Rotate
+right** buttons: they rotate the working canvas by 90° per press and clear
+any taps, since the corner correspondence changes with orientation. Rotation
+happens before sampling, so the vision pipeline is untouched. The B2 e2e
+flow exercises it (one Rotate left, then natural-order corner taps).
