@@ -54,6 +54,9 @@ export interface Lab {
 export interface TokenDef {
   id: TokenId;
   label: string;
+  // Short code for board-view cell labels; defaults to the uppercased first
+  // letter of id if omitted.
+  abbr?: string;
   displayColor?: string; // CSS color for rendering; omitted → white + label text
   // The token's tones as calibrated from reference photos — a list because
   // physical tokens are rarely one flat color (base color + printed pattern).

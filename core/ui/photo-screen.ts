@@ -32,12 +32,13 @@ export interface PhotoScreenOptions<B extends BoardState> {
   variant: B["boardSide"];
   onAccept(board: BoardState<B["boardSide"]>): void;
   onCancel(): void;
+  onChangeSide(): void;
 }
 
 export function renderPhotoScreen<B extends BoardState>(
   opts: PhotoScreenOptions<B>,
 ): HTMLElement {
-  const { module, variant, onAccept, onCancel } = opts;
+  const { module, variant, onAccept, onCancel, onChangeSide } = opts;
   const vision = module.vision;
   const topology = module.board.topology(variant);
   if (!vision || !topology.calibrationCells) {
@@ -180,6 +181,12 @@ export function renderPhotoScreen<B extends BoardState>(
     const sideways = rotation % 180 !== 0;
     canvas!.width = Math.round((sideways ? bitmap!.height : bitmap!.width) * scale);
     canvas!.height = Math.round((sideways ? bitmap!.width : bitmap!.height) * scale);
+    // On desktop-sized viewports, cap the displayed height so the photo and
+    // the SVG grid both fit on screen; the buffer size above (and thus the
+    // vision pipeline's sampling resolution) is untouched.
+    const isDesktop = window.matchMedia("(min-width: 900px)").matches;
+    canvas!.style.maxHeight = isDesktop ? `${Math.round(canvas!.height * 0.6)}px` : "";
+    canvas!.style.width = isDesktop ? "auto" : "";
     const ctx = canvas!.getContext("2d")!;
     ctx.save();
     ctx.translate(canvas!.width / 2, canvas!.height / 2);
@@ -240,7 +247,7 @@ export function renderPhotoScreen<B extends BoardState>(
       ctx.stroke();
 
       const center = applyHomography(proposal.homography, topology.cellCenter(cellId));
-      const label = cellLabel(stacks.get(cellId) ?? []);
+      const label = cellLabel(stacks.get(cellId) ?? [], module.board.tokenVocabulary);
       const text = flagged ? (label ? `${label}?` : "?") : label;
       if (text) ctx.fillText(text, center.x, center.y);
     }
@@ -443,6 +450,12 @@ export function renderPhotoScreen<B extends BoardState>(
     root.append(controls);
 
     if (!canvas) return;
+
+    if (module.board.variants.length > 1) {
+      const sideControls = document.createElement("p");
+      sideControls.append(button("Change side", onChangeSide));
+      root.append(sideControls);
+    }
 
     if (proposal && workingBoard) {
       renderCorrectionPhase(proposal);
