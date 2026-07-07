@@ -441,7 +441,6 @@ export function renderPhotoScreen<B extends BoardState>(
     const input = document.createElement("input");
     input.type = "file";
     input.accept = "image/*";
-    input.setAttribute("capture", "environment");
     input.addEventListener("change", () => {
       const file = input.files?.[0];
       if (file) void loadFile(file);
