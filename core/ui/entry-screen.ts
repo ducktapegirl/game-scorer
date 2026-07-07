@@ -129,6 +129,14 @@ export function mountEntryScreen<B extends BoardState, C extends Record<string, 
         photoMode = false;
         render();
       },
+      onChangeSide: () => {
+        if (!confirm("Changing the side clears the entered board. Continue?")) return;
+        clearBoard(module.id);
+        board = null;
+        selected = null;
+        photoMode = false;
+        render();
+      },
     });
   }
 

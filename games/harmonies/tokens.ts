@@ -44,12 +44,12 @@ export const TOKEN_TONES_RGB: Record<TokenColor, Rgb[]> = {
 // displayColor identifies the physical token on screen (function, not
 // styling); referenceSwatches are what the vision classifier votes against.
 export const TOKEN_DEFS: TokenDef[] = [
-  { id: "blue", label: "Water", displayColor: "royalblue" },
-  { id: "gray", label: "Mountain", displayColor: "silver" },
-  { id: "brown", label: "Tree trunk", displayColor: "peru" },
-  { id: "green", label: "Tree foliage / bush", displayColor: "mediumseagreen" },
-  { id: "yellow", label: "Field", displayColor: "gold" },
-  { id: "red", label: "Building", displayColor: "indianred" },
+  { id: "blue", label: "Water", abbr: "Bl", displayColor: "royalblue" },
+  { id: "gray", label: "Mountain", abbr: "Gy", displayColor: "silver" },
+  { id: "brown", label: "Tree trunk", abbr: "Br", displayColor: "peru" },
+  { id: "green", label: "Tree foliage / bush", abbr: "Gn", displayColor: "mediumseagreen" },
+  { id: "yellow", label: "Field", abbr: "Ye", displayColor: "gold" },
+  { id: "red", label: "Building", abbr: "Rd", displayColor: "indianred" },
 ].map((def) => ({
   ...def,
   referenceSwatches: TOKEN_TONES_RGB[def.id as TokenColor].map(rgbToLab),
