@@ -7,6 +7,7 @@ import { applyHomography, computeHomography, type Point } from "../../../core/vi
 import { proposeBoard, type CornerTaps } from "../../../core/vision/propose";
 import type { PixelSource } from "../../../core/vision/sample";
 import { makeImage, paintCube, paintPatternedDisk } from "../../../core/vision/test-helpers";
+import { stackChoices } from "../entry";
 import type { HarmoniesBoardState } from "../rules";
 import { TOKEN_COLORS, TOKEN_DEFS, TOKEN_TONES_RGB, type TokenColor } from "../tokens";
 import { topology, validateStack } from "../topology";
@@ -43,6 +44,22 @@ describe("swatches", () => {
 
   it("declares cube ignore swatches", () => {
     expect(harmoniesVision.ignoreSwatches.length).toBeGreaterThan(0);
+  });
+});
+
+describe("depthTokens", () => {
+  it("are exactly green and gray", () => {
+    expect(harmoniesVision.depthTokens).toEqual(["green", "gray"]);
+  });
+
+  it("each offer three heights so a tap can cycle 1 → 2 → 3", () => {
+    for (const token of harmoniesVision.depthTokens!) {
+      expect(stackChoices(token).map((c) => c.stack.length)).toEqual([1, 2, 3]);
+    }
+  });
+
+  it("excludes red — its hidden base is scoring-irrelevant", () => {
+    expect(harmoniesVision.depthTokens).not.toContain("red");
   });
 });
 

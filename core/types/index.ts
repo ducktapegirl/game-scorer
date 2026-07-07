@@ -74,6 +74,11 @@ export interface GameVisionSpec<V extends string = string, T extends TokenId = T
   // The stack the vision layer proposes when it sees `token` on top of a
   // cell (it can never see underneath).
   proposedStack(token: T): T[];
+  // Tokens whose vision-proposed height-1 stack hides scoring-relevant depth,
+  // so the M5 correction UI lets a tap cycle their height through the game's
+  // stackChoices (Harmonies: green and gray). Tokens absent here are treated
+  // as final on tap.
+  depthTokens?: T[];
 }
 
 // A stack a player may enter for a cell, bottom-to-top, keyed by its top token.

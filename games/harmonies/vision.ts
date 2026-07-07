@@ -63,8 +63,15 @@ const PROPOSED_STACKS: Record<TokenColor, TokenColor[]> = {
   red: ["brown", "red"],
 };
 
+// Green and gray are the only tokens whose height is hidden from a top-down
+// photo and scores differently by height (spec §7), so they alone tap-cycle
+// their depth in the M5 correction UI. Red is deliberately excluded: its
+// base is scoring-irrelevant, so the [brown, red] default stands.
+const DEPTH_TOKENS: TokenColor[] = ["green", "gray"];
+
 export const harmoniesVision: GameVisionSpec<BoardSide, TokenColor> = {
   emptySwatches: (side) => EMPTY_SWATCHES[side],
   ignoreSwatches: CUBE_TONES_RGB.map(rgbToLab),
   proposedStack: (token) => [...PROPOSED_STACKS[token]],
+  depthTokens: [...DEPTH_TOKENS],
 };
