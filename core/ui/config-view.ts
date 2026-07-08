@@ -99,9 +99,13 @@ function renderCounterList(
   }
   container.append(list);
 
+  // Multi-select adder: pick one or more not-yet-added items and add them all
+  // at once (each starting at count 0; counts are then set per row above).
   const available = field.items.filter((i) => !entries.some((e) => e.id === i.id));
   const adder = document.createElement("p");
   const select = document.createElement("select");
+  select.multiple = true;
+  select.size = Math.min(Math.max(available.length, 2), 10);
   for (const item of available) {
     const o = document.createElement("option");
     o.value = item.id;
@@ -110,10 +114,13 @@ function renderCounterList(
   }
   const add = document.createElement("button");
   add.type = "button";
-  add.textContent = "Add";
+  add.textContent = "Add selected";
   add.disabled = available.length === 0;
   add.addEventListener("click", () => {
-    if (select.value) update([...entries, { id: select.value, count: 0 }]);
+    const chosen = Array.from(select.selectedOptions, (o) => o.value);
+    if (chosen.length > 0) {
+      update([...entries, ...chosen.map((id) => ({ id, count: 0 }))]);
+    }
   });
   adder.append(select, " ", add);
   container.append(adder);
