@@ -4,45 +4,50 @@
 import type { ScoreCategory } from "../../core/types";
 import type { HarmoniesConfig } from "./config";
 
+// The color band on the physical card. Not used for scoring; carried for the UI
+// (shown in the card picker) and to match the physical cards.
+export type AnimalColor = "Gray" | "Yellow" | "Blue" | "Red" | "Green";
+
 export interface AnimalCard {
   id: string;
   name: string;
+  color: AnimalColor;
   track: number[]; // track[i] = points if i+1 cubes placed; 0 if 0 cubes
 }
 
 export const ANIMAL_CARDS: AnimalCard[] = [
-  { id: "ani_001", name: "Ant", track: [1, 3, 5] },
-  { id: "ani_002", name: "Antelope", track: [1, 2, 4, 6] },
-  { id: "ani_003", name: "Bear", track: [2, 4, 6, 8] },
-  { id: "ani_004", name: "Bird", track: [1, 2, 4] },
-  { id: "ani_005", name: "Butterfly", track: [3, 5] },
-  { id: "ani_006", name: "Cat", track: [2, 4, 6] },
-  { id: "ani_007", name: "Crab", track: [1, 3, 4] },
-  { id: "ani_008", name: "Crow", track: [2, 4] },
-  { id: "ani_009", name: "Deer", track: [1, 3, 5, 7] },
-  { id: "ani_010", name: "Dolphin", track: [2, 5, 7] },
-  { id: "ani_011", name: "Eagle", track: [3, 5, 7] },
-  { id: "ani_012", name: "Elephant", track: [2, 4, 6, 8] },
-  { id: "ani_013", name: "Fennec Fox", track: [1, 3] },
-  { id: "ani_014", name: "Flamingo", track: [1, 3, 5] },
-  { id: "ani_015", name: "Frog", track: [1, 2, 4] },
-  { id: "ani_016", name: "Giraffe", track: [1, 4, 7, 10] },
-  { id: "ani_017", name: "Gorilla", track: [2, 5, 8] },
-  { id: "ani_018", name: "Hedgehog", track: [1, 3] },
-  { id: "ani_019", name: "Hippo", track: [3, 5, 7, 10] },
-  { id: "ani_020", name: "Hummingbird", track: [2, 3] },
-  { id: "ani_021", name: "Lemur", track: [1, 2, 3] },
-  { id: "ani_022", name: "Lion", track: [2, 5, 8, 11] },
-  { id: "ani_023", name: "Meerkat", track: [1, 4, 6] },
-  { id: "ani_024", name: "Mouse", track: [1, 2, 3] },
-  { id: "ani_025", name: "Otter", track: [2, 4, 6] },
-  { id: "ani_026", name: "Owl", track: [1, 4, 7] },
-  { id: "ani_027", name: "Peacock", track: [2, 5, 8, 10] },
-  { id: "ani_028", name: "Penguin", track: [2, 4, 6] },
-  { id: "ani_029", name: "Rabbit", track: [1, 2] },
-  { id: "ani_030", name: "Raccoon", track: [1, 3, 5] },
-  { id: "ani_031", name: "Squirrel", track: [1, 2, 4] },
-  { id: "ani_032", name: "Turtle", track: [1, 3, 5] },
+  { id: "ani_001", name: "Bat", color: "Gray", track: [3, 6, 10, 15] },
+  { id: "ani_002", name: "Fennec Fox", color: "Gray", track: [4, 9, 16] },
+  { id: "ani_003", name: "Vulture", color: "Gray", track: [5, 11] },
+  { id: "ani_004", name: "Meerkat", color: "Gray", track: [2, 5, 9, 14] },
+  { id: "ani_005", name: "Macaque", color: "Gray", track: [5, 11] },
+  { id: "ani_006", name: "Penguin", color: "Gray", track: [4, 10, 16] },
+  { id: "ani_007", name: "Arctic Fox", color: "Yellow", track: [5, 10, 17] },
+  { id: "ani_008", name: "Ladybug", color: "Yellow", track: [2, 5, 8, 12, 17] },
+  { id: "ani_009", name: "Llama", color: "Yellow", track: [5, 12] },
+  { id: "ani_010", name: "Raccoon", color: "Yellow", track: [6, 12] },
+  { id: "ani_011", name: "Crow", color: "Yellow", track: [4, 9] },
+  { id: "ani_012", name: "Panther", color: "Yellow", track: [5, 11] },
+  { id: "ani_013", name: "Otter", color: "Blue", track: [5, 10, 16] },
+  { id: "ani_014", name: "Frog", color: "Blue", track: [2, 4, 6, 10, 15] },
+  { id: "ani_015", name: "Alligator", color: "Blue", track: [4, 9, 15] },
+  { id: "ani_016", name: "Stingray", color: "Blue", track: [4, 10, 16] },
+  { id: "ani_017", name: "Fish", color: "Blue", track: [3, 6, 10, 16] },
+  { id: "ani_018", name: "Flamingo", color: "Blue", track: [4, 10, 16] },
+  { id: "ani_019", name: "Duck", color: "Blue", track: [2, 4, 8, 13] },
+  { id: "ani_020", name: "Gecko", color: "Red", track: [5, 10, 16] },
+  { id: "ani_021", name: "Hedgehog", color: "Red", track: [5, 12] },
+  { id: "ani_022", name: "Peacock", color: "Red", track: [5, 10, 17] },
+  { id: "ani_023", name: "Mouse", color: "Red", track: [5, 10, 17] },
+  { id: "ani_024", name: "Squirrel", color: "Red", track: [4, 9, 15] },
+  { id: "ani_025", name: "Wolf", color: "Green", track: [4, 10, 16] },
+  { id: "ani_026", name: "Rabbit", color: "Green", track: [5, 10, 17] },
+  { id: "ani_027", name: "Warthog", color: "Green", track: [4, 8, 13] },
+  { id: "ani_028", name: "Koala", color: "Green", track: [3, 6, 10, 15] },
+  { id: "ani_029", name: "Kookaburra", color: "Green", track: [5, 11, 18] },
+  { id: "ani_030", name: "Macaw", color: "Green", track: [4, 9, 14] },
+  { id: "ani_031", name: "Bear", color: "Green", track: [5, 11] },
+  { id: "ani_032", name: "Bee", color: "Green", track: [8, 18] },
 ];
 
 export function scoreAnimals(entries: HarmoniesConfig["animalCards"]): ScoreCategory {
