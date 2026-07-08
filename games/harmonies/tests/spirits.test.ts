@@ -105,7 +105,7 @@ describe("Spirit Cards", () => {
     ]);
     const breakdown = score(board, {
       spirit: "spi_010",
-      animalCards: [{ id: "ani_001", count: 2 }], // Ant: 3 points
+      animalCards: [{ id: "ani_001", count: 2 }], // Bat: track[1] = 6 points
     });
 
     const trees = breakdown.categories.find((c) => c.id === "trees")!;
@@ -114,8 +114,8 @@ describe("Spirit Cards", () => {
 
     expect(trees.points).toBe(0); // replaced
     expect(spirit.points).toBe(6); // 2 trees * 3
-    expect(animals.points).toBe(3); // animal cards untouched
-    expect(breakdown.total).toBe(9); // 6 + 3
+    expect(animals.points).toBe(6); // animal cards untouched
+    expect(breakdown.total).toBe(12); // 6 + 6
   });
 
   it("spirit unknown id throws", () => {
