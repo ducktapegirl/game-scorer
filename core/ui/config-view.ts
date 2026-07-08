@@ -99,23 +99,38 @@ function renderCounterList(
   }
   container.append(list);
 
+  // Checkbox-grid adder: tick any number of not-yet-added items and "Add
+  // selected" adds them all at once (each starting at count 0; counts are then
+  // set per row above). The grid lays checkboxes across the available width.
   const available = field.items.filter((i) => !entries.some((e) => e.id === i.id));
-  const adder = document.createElement("p");
-  const select = document.createElement("select");
+  const adder = document.createElement("div");
+
+  const grid = document.createElement("div");
+  grid.style.display = "grid";
+  grid.style.gridTemplateColumns = "repeat(auto-fill, minmax(12em, 1fr))";
+  const boxes: HTMLInputElement[] = [];
   for (const item of available) {
-    const o = document.createElement("option");
-    o.value = item.id;
-    o.textContent = item.label;
-    select.append(o);
+    const label = document.createElement("label");
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.value = item.id;
+    label.append(checkbox, ` ${item.label}`);
+    grid.append(label);
+    boxes.push(checkbox);
   }
+  container.append(grid);
+
   const add = document.createElement("button");
   add.type = "button";
-  add.textContent = "Add";
+  add.textContent = "Add selected";
   add.disabled = available.length === 0;
   add.addEventListener("click", () => {
-    if (select.value) update([...entries, { id: select.value, count: 0 }]);
+    const chosen = boxes.filter((b) => b.checked).map((b) => b.value);
+    if (chosen.length > 0) {
+      update([...entries, ...chosen.map((id) => ({ id, count: 0 }))]);
+    }
   });
-  adder.append(select, " ", add);
+  adder.append(add);
   container.append(adder);
 
   return container;
