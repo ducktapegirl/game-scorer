@@ -37,13 +37,23 @@ describe("Animal Cards", () => {
   });
 
   it("scoreAnimals scores cards correctly", () => {
-    // Ant (track [1, 3, 5]): 1 cube = 1, 2 cubes = 3, 0 cubes = 0
-    // Meerkat (track [1, 4, 6]): 1 cube = 1
+    // Bat (track [3, 6, 10, 15]): 2 cubes = track[1] = 6
+    // Mouse (track [5, 10, 17]): 1 cube = track[0] = 5
     const result = scoreAnimals([
-      { id: "ani_001", count: 2 }, // Ant: track[1] = 3
-      { id: "ani_023", count: 1 }, // Meerkat: track[0] = 1
+      { id: "ani_001", count: 2 }, // Bat: track[1] = 6
+      { id: "ani_023", count: 1 }, // Mouse: track[0] = 5
     ]);
-    expect(result.points).toBe(4); // 3 + 1
+    expect(result.points).toBe(11); // 6 + 5
+  });
+
+  it("scoreAnimals spot-checks transcribed track values", () => {
+    // Ladybug (ani_008) is the only 5-cube card: track [2, 5, 8, 12, 17]
+    expect(scoreAnimals([{ id: "ani_008", count: 5 }]).points).toBe(17);
+    expect(scoreAnimals([{ id: "ani_008", count: 3 }]).points).toBe(8);
+    // Bee (ani_032): track [8, 18]
+    expect(scoreAnimals([{ id: "ani_032", count: 2 }]).points).toBe(18);
+    // Kookaburra (ani_029): track [5, 11, 18]
+    expect(scoreAnimals([{ id: "ani_029", count: 3 }]).points).toBe(18);
   });
 
   it("scoreAnimals throws on unknown card id", () => {
@@ -51,7 +61,7 @@ describe("Animal Cards", () => {
   });
 
   it("scoreAnimals throws on out-of-range cube count", () => {
-    // Butterfly has track length 2, so max cubes = 2
+    // Macaque (ani_005) has track length 2, so max cubes = 2
     expect(() => scoreAnimals([{ id: "ani_005", count: 3 }])).toThrow(/out of range/);
     expect(() => scoreAnimals([{ id: "ani_005", count: -1 }])).toThrow(/out of range/);
   });
