@@ -22,6 +22,13 @@ describe("Animal Cards", () => {
     expect(new Set(names).size).toBe(32);
   });
 
+  it("every card has a valid color", () => {
+    const colors = new Set(["Gray", "Yellow", "Blue", "Red", "Green"]);
+    for (const card of ANIMAL_CARDS) {
+      expect(colors.has(card.color)).toBe(true);
+    }
+  });
+
   it("scoreAnimals(0 cubes) = 0", () => {
     const result = scoreAnimals([]);
     expect(result.points).toBe(0);
