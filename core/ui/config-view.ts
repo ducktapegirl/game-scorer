@@ -127,10 +127,10 @@ function renderCounterList(
   container.append(grid);
 
   const buttonRow = document.createElement("div");
-  buttonRow.className = "row";
+  buttonRow.className = "button-group";
   const add = document.createElement("button");
   add.type = "button";
-  add.className = "btn btn--ghost btn--sm";
+  add.className = "btn btn--ghost btn--block";
   add.textContent = "Add selected";
   add.disabled = available.length === 0;
   add.addEventListener("click", () => {

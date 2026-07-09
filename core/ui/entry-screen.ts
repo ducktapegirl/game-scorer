@@ -168,7 +168,7 @@ export function mountEntryScreen<B extends BoardState, C extends Record<string, 
   function renderConfigSection(): HTMLElement {
     const clearBtn = document.createElement("button");
     clearBtn.type = "button";
-    clearBtn.className = "btn btn--ghost btn--sm";
+    clearBtn.className = "btn btn--ghost btn--sm btn--block";
     clearBtn.textContent = "Clear cards";
     clearBtn.addEventListener("click", () => {
       if (!confirm("Remove all entered cards and options?")) return;
@@ -177,7 +177,7 @@ export function mountEntryScreen<B extends BoardState, C extends Record<string, 
       render();
     });
     const clear = document.createElement("div");
-    clear.className = "row";
+    clear.className = "button-group";
     clear.append(clearBtn);
     return card(
       renderConfig({

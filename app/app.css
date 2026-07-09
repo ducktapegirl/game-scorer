@@ -138,6 +138,11 @@
   align-items: center;
   gap: var(--space-2);
 }
+.button-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
 
 /* ---- Score table: labels in body font, all digits in mono (DS rule) ---- */
 .score-table {
