@@ -181,12 +181,13 @@ export function renderPhotoScreen<B extends BoardState>(
     const sideways = rotation % 180 !== 0;
     canvas!.width = Math.round((sideways ? bitmap!.height : bitmap!.width) * scale);
     canvas!.height = Math.round((sideways ? bitmap!.width : bitmap!.height) * scale);
-    // On desktop-sized viewports, cap the displayed height so the photo and
-    // the SVG grid both fit on screen; the buffer size above (and thus the
-    // vision pipeline's sampling resolution) is untouched.
+    // Cap the displayed canvas height to keep photo + UI controls readable on
+    // all viewports (mobile: 50vh, desktop: 60% of canvas); the internal buffer
+    // size and vision pipeline resolution are untouched.
     const isDesktop = window.matchMedia("(min-width: 900px)").matches;
-    canvas!.style.maxHeight = isDesktop ? `${Math.round(canvas!.height * 0.6)}px` : "";
+    canvas!.style.maxHeight = isDesktop ? `${Math.round(canvas!.height * 0.6)}px` : "50vh";
     canvas!.style.width = isDesktop ? "auto" : "";
+    canvas!.style.objectFit = "contain";
     const ctx = canvas!.getContext("2d")!;
     ctx.save();
     ctx.translate(canvas!.width / 2, canvas!.height / 2);
