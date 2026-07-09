@@ -24,6 +24,7 @@ export function renderConfig<C extends Record<string, ConfigFieldValue>>(
       const label = document.createElement("label");
       label.append(`${field.label}: `);
       const select = document.createElement("select");
+      select.className = "select";
       for (const option of field.options) {
         const o = document.createElement("option");
         o.value = option.id;
@@ -40,6 +41,7 @@ export function renderConfig<C extends Record<string, ConfigFieldValue>>(
     } else {
       const p = document.createElement("p");
       const label = document.createElement("label");
+      label.className = "checkbox";
       const checkbox = document.createElement("input");
       checkbox.type = "checkbox";
       checkbox.checked = config[field.id] === true;
@@ -75,6 +77,7 @@ function renderCounterList(
 
     const minus = document.createElement("button");
     minus.type = "button";
+    minus.className = "btn btn--ghost btn--sm";
     minus.textContent = "−";
     minus.disabled = entry.count <= 0;
     minus.addEventListener("click", () =>
@@ -83,6 +86,7 @@ function renderCounterList(
 
     const plus = document.createElement("button");
     plus.type = "button";
+    plus.className = "btn btn--ghost btn--sm";
     plus.textContent = "+";
     plus.disabled = item?.max !== undefined && entry.count >= item.max;
     plus.addEventListener("click", () =>
@@ -91,6 +95,7 @@ function renderCounterList(
 
     const remove = document.createElement("button");
     remove.type = "button";
+    remove.className = "btn btn--ghost btn--sm";
     remove.textContent = "Remove";
     remove.addEventListener("click", () => update(entries.filter((e) => e.id !== entry.id)));
 
@@ -111,6 +116,7 @@ function renderCounterList(
   const boxes: HTMLInputElement[] = [];
   for (const item of available) {
     const label = document.createElement("label");
+    label.className = "checkbox";
     const checkbox = document.createElement("input");
     checkbox.type = "checkbox";
     checkbox.value = item.id;
@@ -122,6 +128,7 @@ function renderCounterList(
 
   const add = document.createElement("button");
   add.type = "button";
+  add.className = "btn btn--ghost btn--sm";
   add.textContent = "Add selected";
   add.disabled = available.length === 0;
   add.addEventListener("click", () => {

@@ -1,0 +1,12 @@
+/* ============================================================
+   FONTS — Games with Friends
+   No brand font files were provided. Substituted with Google
+   Fonts nearest-match for a "playful & cozy" tabletop-game feel:
+     - Display/headings: Baloo 2 (rounded, friendly, game-box energy)
+     - Body/UI:           Nunito (warm, rounded-terminal humanist sans)
+     - Score digits/mono: Space Mono (tactile tabular numerals for counters)
+   FLAGGED SUBSTITUTION — see readme.md "Typography" for details.
+   Loaded from Google Fonts CDN (no self-hosted binaries yet).
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap');

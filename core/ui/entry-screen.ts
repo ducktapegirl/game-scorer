@@ -9,6 +9,7 @@ import type { BoardState, CellId, ConfigFieldValue, GameModule, TokenId } from "
 import { renderBoard } from "./board-view";
 import { renderCellEditor } from "./cell-editor";
 import { renderConfig } from "./config-view";
+import { button } from "./controls";
 import { emptyBoard, validateSavedBoard, validateSavedConfig, withStack } from "./entry-state";
 import { renderPhotoScreen } from "./photo-screen";
 import { renderScore } from "./score-view";
@@ -46,35 +47,41 @@ export function mountEntryScreen<B extends BoardState, C extends Record<string, 
     render();
   }
 
-  function button(label: string, onClick: () => void): HTMLButtonElement {
-    const b = document.createElement("button");
-    b.type = "button";
-    b.textContent = label;
-    b.addEventListener("click", onClick);
-    return b;
+  // Wrap a block of children in a cream card surface.
+  function card(...children: (Node | string)[]): HTMLElement {
+    const el = document.createElement("div");
+    el.className = "card";
+    el.append(...children);
+    return el;
   }
 
   function renderVariantPrompt(): HTMLElement[] {
     const prompt = document.createElement("p");
     prompt.textContent =
       "Which side of the board are you playing? Scoring cannot run until this is answered.";
-    const buttons = document.createElement("p");
+    const buttons = document.createElement("div");
+    buttons.className = "row";
     for (const variant of module.board.variants) {
       buttons.append(
-        button(variant.label, () => {
-          setBoard(emptyBoard<B>(variant.id));
-          render();
-        }),
-        " ",
+        button(
+          variant.label,
+          () => {
+            setBoard(emptyBoard<B>(variant.id));
+            render();
+          },
+          "primary",
+        ),
       );
     }
-    return [prompt, buttons];
+    return [card(prompt, buttons)];
   }
 
   function renderControls(b: B): HTMLElement {
-    const controls = document.createElement("p");
     const variant = module.board.variants.find((v) => v.id === b.boardSide);
-    controls.append(`Board: ${variant?.label ?? b.boardSide} `);
+    const heading = document.createElement("p");
+    heading.textContent = `Board: ${variant?.label ?? b.boardSide}`;
+    const controls = document.createElement("div");
+    controls.className = "row";
     if (module.board.variants.length > 1) {
       controls.append(
         button("Change side", () => {
@@ -84,7 +91,6 @@ export function mountEntryScreen<B extends BoardState, C extends Record<string, 
           selected = null;
           render();
         }),
-        " ",
       );
     }
     controls.append(
@@ -99,14 +105,17 @@ export function mountEntryScreen<B extends BoardState, C extends Record<string, 
     // data and calibration reference cells for this variant.
     if (module.vision && module.board.topology(b.boardSide).calibrationCells) {
       controls.append(
-        " ",
-        button("Score from photo", () => {
-          photoMode = true;
-          render();
-        }),
+        button(
+          "Score from photo",
+          () => {
+            photoMode = true;
+            render();
+          },
+          "primary",
+        ),
       );
     }
-    return controls;
+    return card(heading, controls);
   }
 
   function renderPhotoMode(b: B): HTMLElement {
@@ -157,15 +166,8 @@ export function mountEntryScreen<B extends BoardState, C extends Record<string, 
   }
 
   function renderConfigSection(): HTMLElement {
-    const section = document.createElement("div");
-    section.append(
-      renderConfig({
-        schema: module.configSchema,
-        config,
-        onChange: setConfig,
-      }),
-    );
-    const clear = document.createElement("p");
+    const clear = document.createElement("div");
+    clear.className = "row";
     clear.append(
       button("Clear cards", () => {
         if (!confirm("Remove all entered cards and options?")) return;
@@ -174,8 +176,14 @@ export function mountEntryScreen<B extends BoardState, C extends Record<string, 
         render();
       }),
     );
-    section.append(clear);
-    return section;
+    return card(
+      renderConfig({
+        schema: module.configSchema,
+        config,
+        onChange: setConfig,
+      }),
+      clear,
+    );
   }
 
   function render(): void {
@@ -202,7 +210,7 @@ export function mountEntryScreen<B extends BoardState, C extends Record<string, 
       }),
       renderEditor(b),
       ...(module.configSchema.length > 0 ? [renderConfigSection()] : []),
-      renderScore(module.score(b, config)),
+      card(renderScore(module.score(b, config))),
     );
   }
 
