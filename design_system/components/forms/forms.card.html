@@ -1,0 +1,33 @@
+<!-- @dsCard group="Components" viewport="700x340" name="Form Controls" subtitle="Input, Select, Checkbox, Radio, Switch" -->
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<div id="root" style="padding:20px; background:var(--color-bg);"></div>
+<script type="text/babel">
+const { Input, Select, Checkbox, Radio, Switch } = window.GamesWithFriendsDesignSystem_019dd7;
+function Demo() {
+  const [name, setName] = React.useState('Priya');
+  const [game, setGame] = React.useState('wingspan');
+  const [bonus, setBonus] = React.useState(true);
+  const [mode, setMode] = React.useState('high');
+  const [sound, setSound] = React.useState(false);
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, fontFamily: 'var(--font-body)', maxWidth: 660 }}>
+      <div style={{ display: 'flex', gap: 16 }}>
+        <Input label="Player name" value={name} onChange={setName} style={{ maxWidth: 220 }} />
+        <Input label="With error" value="" onChange={()=>{}} error="Required" style={{ maxWidth: 220 }} />
+        <Select label="Game" value={game} onChange={setGame} options={[{value:'wingspan',label:'Wingspan'},{value:'harmonies',label:'Harmonies'}]} style={{ maxWidth: 200 }} />
+      </div>
+      <div style={{ display: 'flex', gap: 24, alignItems: 'center', flexWrap: 'wrap' }}>
+        <Checkbox label="Track bonus points" checked={bonus} onChange={setBonus} />
+        <Radio label="Highest wins" checked={mode==='high'} onChange={() => setMode('high')} />
+        <Radio label="Lowest wins" checked={mode==='low'} onChange={() => setMode('low')} />
+        <Switch label="Sound effects" checked={sound} onChange={setSound} />
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Demo />);
+</script>
