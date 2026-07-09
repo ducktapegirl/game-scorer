@@ -126,6 +126,8 @@ function renderCounterList(
   }
   container.append(grid);
 
+  const buttonRow = document.createElement("div");
+  buttonRow.className = "row";
   const add = document.createElement("button");
   add.type = "button";
   add.className = "btn btn--ghost btn--sm";
@@ -137,7 +139,8 @@ function renderCounterList(
       update([...entries, ...chosen.map((id) => ({ id, count: 0 }))]);
     }
   });
-  adder.append(add);
+  buttonRow.append(add);
+  adder.append(grid, buttonRow);
   container.append(adder);
 
   return container;
