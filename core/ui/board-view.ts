@@ -86,8 +86,16 @@ export function renderBoard(opts: BoardViewOptions): SVGSVGElement {
 
     const polygon = document.createElementNS(SVG_NS, "polygon");
     polygon.setAttribute("points", corners.map((p) => `${p.x},${p.y}`).join(" "));
-    polygon.setAttribute("fill", top?.displayColor ?? "white");
-    polygon.setAttribute("stroke", "black");
+    // Placed pieces keep their vocabulary color (presentation attribute); empty
+    // cells take the design-system surface tone. Chrome (the outline) is
+    // token-driven via inline style, which overrides the fill attribute cleanly
+    // and resolves the CSS var once the SVG is in the document.
+    if (top?.displayColor) {
+      polygon.setAttribute("fill", top.displayColor);
+    } else {
+      polygon.style.fill = "var(--color-surface)";
+    }
+    polygon.style.stroke = id === selected ? "var(--color-primary)" : "var(--color-border-strong)";
     polygon.setAttribute("stroke-width", id === selected ? "0.12" : "0.03");
     group.append(polygon);
 

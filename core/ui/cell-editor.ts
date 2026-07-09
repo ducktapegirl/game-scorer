@@ -6,6 +6,7 @@
 // and reports the final stack through onApply. Browser-default UI, no CSS.
 
 import type { BoardState, CellId, GameModule, TokenId } from "../types";
+import { button } from "./controls";
 import { stackAt } from "./entry-state";
 
 export interface CellEditorOptions<B extends BoardState> {
@@ -29,14 +30,6 @@ export function renderCellEditor<B extends BoardState>(opts: CellEditorOptions<B
   // (e.g. green heights); null until then. Local because it's mid-gesture UI
   // state, not board state.
   let pendingToken: TokenId | null = null;
-
-  function button(label: string, onClick: () => void): HTMLButtonElement {
-    const b = document.createElement("button");
-    b.type = "button";
-    b.textContent = label;
-    b.addEventListener("click", onClick);
-    return b;
-  }
 
   function render(): void {
     root.replaceChildren();
