@@ -166,16 +166,19 @@ export function mountEntryScreen<B extends BoardState, C extends Record<string, 
   }
 
   function renderConfigSection(): HTMLElement {
+    const clearBtn = document.createElement("button");
+    clearBtn.type = "button";
+    clearBtn.className = "btn btn--ghost btn--sm";
+    clearBtn.textContent = "Clear cards";
+    clearBtn.addEventListener("click", () => {
+      if (!confirm("Remove all entered cards and options?")) return;
+      clearConfig(module.id);
+      config = module.emptyConfig;
+      render();
+    });
     const clear = document.createElement("div");
     clear.className = "row";
-    clear.append(
-      button("Clear cards", () => {
-        if (!confirm("Remove all entered cards and options?")) return;
-        clearConfig(module.id);
-        config = module.emptyConfig;
-        render();
-      }),
-    );
+    clear.append(clearBtn);
     return card(
       renderConfig({
         schema: module.configSchema,
