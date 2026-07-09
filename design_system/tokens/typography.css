@@ -1,0 +1,43 @@
+/* ============================================================
+   TYPOGRAPHY — Games with Friends
+   ============================================================ */
+
+:root {
+  --font-display: 'Baloo 2', ui-rounded, 'Segoe UI Rounded', system-ui, sans-serif;
+  --font-body: 'Nunito', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'Space Mono', 'SF Mono', ui-monospace, monospace;
+
+  /* Type scale (px) */
+  --text-xs: 13px;
+  --text-sm: 15px;
+  --text-base: 17px;
+  --text-md: 19px;
+  --text-lg: 22px;
+  --text-xl: 26px;
+  --text-2xl: 32px;
+  --text-3xl: 40px;
+  --text-4xl: 52px;
+  --text-5xl: 68px;
+
+  /* Score-digit sizes (mono, used in counters/tiles) */
+  --score-sm: 20px;
+  --score-md: 32px;
+  --score-lg: 56px;
+  --score-xl: 88px;
+
+  --leading-tight: 1.1;
+  --leading-snug: 1.3;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.65;
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --weight-extrabold: 800;
+
+  --tracking-tight: -0.01em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.02em;
+  --tracking-wider: 0.06em;
+}
