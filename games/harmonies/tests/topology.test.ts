@@ -42,6 +42,28 @@ describe("board topology", () => {
   it("unknown cells have no neighbors", () => {
     expect(topology("A").neighbors("99,99")).toEqual([]);
   });
+
+  it.each(["A", "B"] as const)(
+    "side %s calibration cells are the grid's corner tiles in TL/TR/BR/BL order",
+    (side) => {
+      const topo = topology(side);
+      const calibration = topo.calibrationCells!;
+      expect(new Set(calibration).size).toBe(4);
+      for (const id of calibration) expect(topo.cells).toContain(id);
+
+      const centers = topo.cells.map((id) => topo.cellCenter(id));
+      const minX = Math.min(...centers.map((c) => c.x));
+      const maxX = Math.max(...centers.map((c) => c.x));
+      const minY = Math.min(...centers.map((c) => c.y));
+      const maxY = Math.max(...centers.map((c) => c.y));
+
+      const [tl, tr, br, bl] = calibration.map((id) => topo.cellCenter(id));
+      expect(tl).toEqual({ x: minX, y: minY });
+      expect(tr).toEqual({ x: maxX, y: minY });
+      expect(br).toEqual({ x: maxX, y: maxY });
+      expect(bl).toEqual({ x: minX, y: maxY });
+    },
+  );
 });
 
 describe("validateStack", () => {

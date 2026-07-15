@@ -1,0 +1,15 @@
+/* ============================================================
+   RADIUS — Games with Friends
+   Generous, tactile rounding — think rounded wooden tiles/tokens,
+   not sharp corporate corners.
+   ============================================================ */
+
+:root {
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
+  --radius-pill: 999px;
+  --radius-circle: 50%;
+}

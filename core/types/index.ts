@@ -31,16 +31,57 @@ export interface BoardTopology {
   shape: "hex" | "square" | "custom";
   cells: CellId[]; // the fixed set of valid cell ids
   neighbors(id: CellId): CellId[]; // adjacency, filtered to valid cells
-  // Abstract layout coordinates for on-screen rendering, in units of one cell
-  // spacing. Distinct from M4's cellCenterPx, which maps into photo space.
+  // Abstract layout coordinates, in units of one cell spacing. Also the
+  // planar frame for photo calibration: the layout is an exact model of the
+  // physical grid up to an affine transform, which the calibration
+  // homography absorbs.
   cellCenter(id: CellId): { x: number; y: number };
+  // The four cells whose centers the user taps to calibrate a photo, in
+  // top-left, top-right, bottom-right, bottom-left order as laid out by
+  // cellCenter. Supplied only by games with hasVisualBoard; they must not
+  // be collinear in the layout.
+  calibrationCells?: readonly [CellId, CellId, CellId, CellId];
+}
+
+// A color in CIE Lab (D65) — the perceptual space the vision classifier
+// measures swatch distance in.
+export interface Lab {
+  L: number;
+  a: number;
+  b: number;
 }
 
 export interface TokenDef {
   id: TokenId;
   label: string;
+  // Short code for board-view cell labels; defaults to the uppercased first
+  // letter of id if omitted.
+  abbr?: string;
   displayColor?: string; // CSS color for rendering; omitted → white + label text
-  referenceSwatch?: unknown; // Lab swatch data lands in M4 calibration
+  // The token's tones as calibrated from reference photos — a list because
+  // physical tokens are rarely one flat color (base color + printed pattern).
+  referenceSwatches?: Lab[];
+}
+
+// Game-supplied data for the vision pipeline (core/vision is the mechanism;
+// this is the per-game data it runs on). Present iff hasVisualBoard.
+export interface GameVisionSpec<V extends string = string, T extends TokenId = TokenId> {
+  // The empty-board appearance(s) for a variant. The printed art is rarely
+  // one flat color, so this is a list — any of them winning the nearest-
+  // swatch match means "no token here".
+  emptySwatches(variant: V): Lab[];
+  // Colors of things that may sit ON TOP of tokens without being tokens
+  // (Harmonies: translucent animal cubes). Pixels matching these are
+  // discarded from the classification vote rather than counted.
+  ignoreSwatches: Lab[];
+  // The stack the vision layer proposes when it sees `token` on top of a
+  // cell (it can never see underneath).
+  proposedStack(token: T): T[];
+  // Tokens whose vision-proposed height-1 stack hides scoring-relevant depth,
+  // so the M5 correction UI lets a tap cycle their height through the game's
+  // stackChoices (Harmonies: green and gray). Tokens absent here are treated
+  // as final on tap.
+  depthTokens?: T[];
 }
 
 // A stack a player may enter for a cell, bottom-to-top, keyed by its top token.
@@ -96,5 +137,8 @@ export interface GameModule<
   score(board: B, config: C): ScoreBreakdown;
   configSchema: ConfigSchema;
   emptyConfig: C;
+  // Vision data for photo-based board entry; core/ui offers the photo flow
+  // only when this is present (and hasVisualBoard is true).
+  vision?: GameVisionSpec<B["boardSide"]>;
   // revealSequence is added in M6
 }

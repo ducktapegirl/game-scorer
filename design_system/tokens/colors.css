@@ -1,0 +1,118 @@
+/* ============================================================
+   COLORS — Games with Friends
+   Warm, nature-toned palette (mustard / teal / coral / olive),
+   inspired loosely by tactile tabletop game components.
+   Base scales first, semantic aliases below.
+   ============================================================ */
+
+:root {
+  /* ---- Coral (secondary) ---- */
+  --coral-50:  #FDEEEC;
+  --coral-100: #FBDCD8;
+  --coral-200: #F5B6B0;
+  --coral-300: #EC8F8A;
+  --coral-400: #E36E6C;
+  --coral-500: #D9646B; /* secondary */
+  --coral-600: #C14A54;
+  --coral-700: #9C3A44;
+  --coral-800: #772C35;
+  --coral-900: #521F27;
+
+  /* ---- Teal (primary / brand) ---- */
+  --teal-25:  #E7F1F0; /* background tint — very light, complements teal primary */
+  --teal-50:  #E9F2F1;
+  --teal-100: #D2E5E3;
+  --teal-200: #A2CBC7;
+  --teal-300: #6FAEA9;
+  --teal-400: #3E8D89;
+  --teal-500: #1F6E78; /* brand primary */
+  --teal-600: #195A63;
+  --teal-700: #14484F;
+  --teal-800: #0F373C;
+  --teal-900: #0A272B;
+
+  /* ---- Mustard (accent / warm highlight) ---- */
+  --mustard-50:  #FCF2DE;
+  --mustard-100: #F9E6BE;
+  --mustard-200: #F3D188;
+  --mustard-300: #ECBC5C;
+  --mustard-400: #E3A73E;
+  --mustard-500: #CE8F29; /* accent */
+  --mustard-600: #A9741F;
+  --mustard-700: #825918;
+  --mustard-800: #5E4011;
+  --mustard-900: #3D2A0B;
+
+  /* ---- Olive (accent / success) ---- */
+  --olive-50:  #EEF0E3;
+  --olive-100: #DEE2C7;
+  --olive-200: #C1C795;
+  --olive-300: #A3AD6C;
+  --olive-400: #8C984F;
+  --olive-500: #7C8B4A; /* accent / success */
+  --olive-600: #647139;
+  --olive-700: #4D562C;
+  --olive-800: #373C1F;
+  --olive-900: #232712;
+
+  /* ---- Ink (warm neutrals — text, dark surfaces) ---- */
+  --ink-50:  #F7F3EF;
+  --ink-100: #EDE5DC;
+  --ink-200: #D8C9BB;
+  --ink-300: #B6A290;
+  --ink-400: #8F7B6A;
+  --ink-500: #6B594B;
+  --ink-600: #4F4038;
+  --ink-700: #3A2E28;
+  --ink-800: #2B2420; /* primary text */
+  --ink-900: #1B1613;
+
+  /* ---- Cream (warm neutrals — card/surface tone, no longer the app bg) ---- */
+  --cream-0:   #FFFFFF;
+  --cream-25:  #FFFDFA;
+  --cream-50:  #FBF3E7;
+  --cream-100: #F5E9D6;
+  --cream-200: #EBDABE;
+
+  /* ---- Utility ---- */
+  --red-500: #C1443F; /* error/danger, distinct from coral brand */
+  --red-100: #F8DEDC;
+
+  /* ============ SEMANTIC ALIASES ============ */
+  --color-bg: var(--teal-25); /* app background — light teal tint, complements primary */
+  --color-bg-subtle: var(--teal-50);
+  --color-surface: var(--cream-25); /* cards/surfaces stay warm cream to pop off the teal bg */
+  --color-surface-raised: var(--cream-0);
+
+  --color-text-primary: var(--ink-800);
+  --color-text-secondary: var(--ink-500);
+  --color-text-muted: var(--ink-400);
+  --color-text-inverse: var(--cream-25);
+  --color-text-on-primary: var(--cream-25);
+
+  --color-border: var(--ink-100);
+  --color-border-strong: var(--ink-200);
+
+  --color-primary: var(--teal-500);
+  --color-primary-hover: var(--teal-600);
+  --color-primary-active: var(--teal-700);
+  --color-primary-soft: var(--teal-50);
+
+  --color-secondary: var(--coral-500);
+  --color-secondary-hover: var(--coral-600);
+  --color-secondary-soft: var(--coral-50);
+
+  --color-accent-mustard: var(--mustard-400);
+  --color-accent-mustard-soft: var(--mustard-50);
+  --color-accent-olive: var(--olive-500);
+  --color-accent-olive-soft: var(--olive-50);
+
+  --color-success: var(--olive-500);
+  --color-success-soft: var(--olive-50);
+  --color-warning: var(--mustard-500);
+  --color-warning-soft: var(--mustard-50);
+  --color-danger: var(--red-500);
+  --color-danger-soft: var(--red-100);
+
+  --color-focus-ring: var(--teal-400);
+}

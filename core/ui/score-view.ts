@@ -4,6 +4,7 @@ import type { ScoreBreakdown } from "../types";
 
 export function renderScore(breakdown: ScoreBreakdown): HTMLTableElement {
   const table = document.createElement("table");
+  table.className = "score-table";
   const body = table.createTBody();
   for (const category of breakdown.categories) {
     const row = body.insertRow();

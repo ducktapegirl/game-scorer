@@ -26,6 +26,10 @@ export const harmoniesConfigSchema: ConfigSchema = [
     type: "counterList",
     id: "animalCards",
     label: "Animal Cards",
-    items: ANIMAL_CARDS.map((c) => ({ id: c.id, label: c.name, max: c.track.length })),
+    // Sorted alphabetically by name for the picker; label shows the card color.
+    // Ordering here is presentation only — the id keys scoring and persistence.
+    items: [...ANIMAL_CARDS]
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map((c) => ({ id: c.id, label: `${c.name} (${c.color})`, max: c.track.length })),
   },
 ];

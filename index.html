@@ -4,10 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Harmonies Scorer</title>
+    <!-- Design-system tokens (colors/type/fonts/spacing/radius/shadow) first,
+         then project utility classes that build on those vars. -->
+    <link rel="stylesheet" href="/design_system/styles.css" />
+    <link rel="stylesheet" href="/app/app.css" />
   </head>
   <body>
-    <h1>Harmonies Scorer</h1>
-    <div id="app"></div>
+    <h1 class="wordmark">Harmonies Scorer</h1>
+    <div id="app" class="app-shell"></div>
     <script type="module" src="/app/main.ts"></script>
   </body>
 </html>
