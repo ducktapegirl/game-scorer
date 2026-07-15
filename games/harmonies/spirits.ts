@@ -12,16 +12,25 @@ export interface SpiritCard {
   score(board: HarmoniesBoardState): { points: number; cells: CellId[] };
 }
 
-// Placeholder scoring functions — will be replaced with real rules once card data is verified.
+// Scoring functions transcribed from the user's physical cards
+// (planning/harmonies-cards-reference.md).
 const spiritScores = {
   spi_001: (board: HarmoniesBoardState) => {
-    // Owl (additive): +3 pts per bush (height-1 tree)
-    const bushes = board.cells.filter((c) => c.stack.at(-1) === "green" && c.stack.length === 1);
-    return { points: 3 * bushes.length, cells: bushes.map((c) => c.id) };
+    // Owl (per-landscape): h1 tree +3, h2 tree +3, h3 tree +1
+    const trees = board.cells.filter((c) => c.stack.at(-1) === "green");
+    let points = 0;
+    const cells: CellId[] = [];
+    for (const cell of trees) {
+      const height = cell.stack.length;
+      if (height === 1 || height === 2) points += 3;
+      else if (height === 3) points += 1;
+      cells.push(cell.id);
+    }
+    return { points, cells };
   },
 
   spi_002: (board: HarmoniesBoardState) => {
-    // Lion (additive): +2 pts per group of 1-2 yellows; +10 pts per group of 3+
+    // Lion (group-based): +2 pts per group of 1-2 yellows; +10 pts per group of 3+
     const topo = topology(board.boardSide);
     const yellows = board.cells.filter((c) => c.stack.at(-1) === "yellow").map((c) => c.id);
     const groups = connectedComponents(yellows, topo.neighbors);
@@ -39,7 +48,7 @@ const spiritScores = {
   },
 
   spi_003: (board: HarmoniesBoardState) => {
-    // Butterfly (additive): +5 pts per field (including singles)
+    // Butterfly (group-based): +5 pts per group of 1+ yellows (including singles)
     const topo = topology(board.boardSide);
     const yellows = board.cells.filter((c) => c.stack.at(-1) === "yellow").map((c) => c.id);
     const groups = connectedComponents(yellows, topo.neighbors);
@@ -48,56 +57,100 @@ const spiritScores = {
   },
 
   spi_004: (board: HarmoniesBoardState) => {
-    // Dragonfly (add): +2 per blue token
-    const blues = board.cells.filter((c) => c.stack.at(-1) === "blue");
-    return { points: 2 * blues.length, cells: blues.map((c) => c.id) };
+    // Dragonfly (group-based): +7 pts per group of 2+ blues
+    const topo = topology(board.boardSide);
+    const blues = board.cells.filter((c) => c.stack.at(-1) === "blue").map((c) => c.id);
+    const groups = connectedComponents(blues, topo.neighbors);
+    let points = 0;
+    const cells: CellId[] = [];
+    for (const group of groups) {
+      if (group.length >= 2) {
+        points += 7;
+        cells.push(...group);
+      }
+    }
+    return { points, cells };
   },
 
   spi_005: (board: HarmoniesBoardState) => {
-    // Frog (add): +1 per tree (green)
-    const greens = board.cells.filter((c) => c.stack.at(-1) === "green");
-    return { points: greens.length, cells: greens.map((c) => c.id) };
-  },
-
-  spi_006: (board: HarmoniesBoardState) => {
-    // Heron (additive): +1 pt per mountain (gray-topped stack), no adjacency required
-    const grays = board.cells.filter((c) => c.stack.at(-1) === "gray");
-    return { points: grays.length, cells: grays.map((c) => c.id) };
-  },
-
-  spi_007: (board: HarmoniesBoardState) => {
-    // Stork (add): +1 per building (red on base)
-    const reds = board.cells.filter((c) => c.stack.at(-1) === "red" && c.stack.length >= 2);
-    return { points: reds.length, cells: reds.map((c) => c.id) };
-  },
-
-  spi_008: (board: HarmoniesBoardState) => {
-    // Cat (additive): +10 pts per building with 2+ neighbor colors; +5 pts with 1 color
-    const topo = topology(board.boardSide);
+    // Deer (per-landscape): h2 tree +4, h3 tree +3 (h1 bushes score nothing)
+    const trees = board.cells.filter((c) => c.stack.at(-1) === "green");
     let points = 0;
     const cells: CellId[] = [];
-    for (const cell of board.cells) {
-      if (cell.stack.at(-1) === "red" && cell.stack.length >= 2) {
-        const neighborColors = new Set(
-          topo.neighbors(cell.id).map((n) => board.cells.find((c) => c.id === n)?.stack.at(-1)).filter(Boolean),
-        );
-        points += neighborColors.size >= 2 ? 10 : 5;
+    for (const cell of trees) {
+      const height = cell.stack.length;
+      if (height === 2) {
+        points += 4;
+        cells.push(cell.id);
+      } else if (height === 3) {
+        points += 3;
         cells.push(cell.id);
       }
     }
     return { points, cells };
   },
 
+  spi_006: (board: HarmoniesBoardState) => {
+    // Ram (per-landscape): h2 mountain +4, h3 mountain +4 (h1 grays score nothing)
+    const mountains = board.cells.filter((c) => c.stack.at(-1) === "gray");
+    let points = 0;
+    const cells: CellId[] = [];
+    for (const cell of mountains) {
+      const height = cell.stack.length;
+      if (height === 2 || height === 3) {
+        points += 4;
+        cells.push(cell.id);
+      }
+    }
+    return { points, cells };
+  },
+
+  spi_007: (board: HarmoniesBoardState) => {
+    // Stork (group-based): +6 pts per group of 2+ buildings (red-topped)
+    const topo = topology(board.boardSide);
+    const buildings = board.cells.filter((c) => c.stack.at(-1) === "red").map((c) => c.id);
+    const groups = connectedComponents(buildings, topo.neighbors);
+    let points = 0;
+    const cells: CellId[] = [];
+    for (const group of groups) {
+      if (group.length >= 2) {
+        points += 6;
+        cells.push(...group);
+      }
+    }
+    return { points, cells };
+  },
+
+  spi_008: (board: HarmoniesBoardState) => {
+    // Cat (group-based): +4 pts per group of 1+ buildings (red-topped)
+    const topo = topology(board.boardSide);
+    const buildings = board.cells.filter((c) => c.stack.at(-1) === "red").map((c) => c.id);
+    const groups = connectedComponents(buildings, topo.neighbors);
+    const points = 4 * groups.length;
+    return { points, cells: buildings };
+  },
+
   spi_009: (board: HarmoniesBoardState) => {
-    // Squirrel (add): +1 per tree (green)
-    const greens = board.cells.filter((c) => c.stack.at(-1) === "green");
-    return { points: greens.length, cells: greens.map((c) => c.id) };
+    // Turtle (per-landscape): +2 pts per blue token
+    const blues = board.cells.filter((c) => c.stack.at(-1) === "blue");
+    return { points: 2 * blues.length, cells: blues.map((c) => c.id) };
   },
 
   spi_010: (board: HarmoniesBoardState) => {
-    // Badger (additive): +3 pts per tree (green-topped stack), any height
-    const trees = board.cells.filter((c) => c.stack.at(-1) === "green");
-    return { points: 3 * trees.length, cells: trees.map((c) => c.id) };
+    // Beaver (per-landscape): h1 building +3, h2 building +3, h3 building +1
+    // (h3 red-topped stacks can't occur under the stacking rules — a
+    // building tops out at height 2 — so that tier is unreachable but kept
+    // for fidelity to the physical card.)
+    const buildings = board.cells.filter((c) => c.stack.at(-1) === "red");
+    let points = 0;
+    const cells: CellId[] = [];
+    for (const cell of buildings) {
+      const height = cell.stack.length;
+      if (height === 1 || height === 2) points += 3;
+      else if (height === 3) points += 1;
+      cells.push(cell.id);
+    }
+    return { points, cells };
   },
 };
 
@@ -106,12 +159,12 @@ export const SPIRIT_CARDS: SpiritCard[] = [
   { id: "spi_002", name: "Lion", score: spiritScores.spi_002 },
   { id: "spi_003", name: "Butterfly", score: spiritScores.spi_003 },
   { id: "spi_004", name: "Dragonfly", score: spiritScores.spi_004 },
-  { id: "spi_005", name: "Frog", score: spiritScores.spi_005 },
-  { id: "spi_006", name: "Heron", score: spiritScores.spi_006 },
+  { id: "spi_005", name: "Deer", score: spiritScores.spi_005 },
+  { id: "spi_006", name: "Ram", score: spiritScores.spi_006 },
   { id: "spi_007", name: "Stork", score: spiritScores.spi_007 },
   { id: "spi_008", name: "Cat", score: spiritScores.spi_008 },
-  { id: "spi_009", name: "Squirrel", score: spiritScores.spi_009 },
-  { id: "spi_010", name: "Badger", score: spiritScores.spi_010 },
+  { id: "spi_009", name: "Turtle", score: spiritScores.spi_009 },
+  { id: "spi_010", name: "Beaver", score: spiritScores.spi_010 },
 ];
 
 export function applySpirit(
