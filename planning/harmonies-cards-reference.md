@@ -49,21 +49,21 @@ For a card with track `[1, 3, 5]`:
 
 ## Nature's Spirit Cards (10 cards)
 
-| Spirit ID | Name | Mode | Replaces | Scoring Rule | Example |
-|-----------|------|------|----------|--------------|---------|
-| spi_001 | Owl (add) | add | — | +1 point per bush on board | Normal bushes score normally; Owl adds 1 per bush |
-| spi_002 | Lion (replace) | replace | fields | 2 pts per field of 1-2 yellows; 10 pts per field of 3+ yellows | Instead of 5 per group, score by group size |
-| spi_003 | Butterfly (replace) | replace | fields | 5 pts per field (including singles) | Unlike base (no singles), Butterfly scores all yellows |
-| spi_004 | Dragonfly (add) | add | — | +2 points per blue token | Rivers unchanged; spirit adds bonus |
-| spi_005 | Frog (add) | add | — | +1 point per tree | Trees unchanged; spirit adds bonus |
-| spi_006 | Heron (replace) | replace | mountains | 1 pt per mountain, no adjacency requirement | Mountains score even if isolated |
-| spi_007 | Stork (add) | add | — | +1 point per building | Buildings unchanged; spirit adds bonus |
-| spi_008 | Cat (replace) | replace | buildings | 10 pts per building with 2+ neighbor colors; 5 pts with 1 color | Easier threshold for buildings |
-| spi_009 | Squirrel (add) | add | — | +1 point per tree | Trees unchanged; spirit adds bonus |
-| spi_010 | Badger (replace) | replace | trees | 3 pts per tree (green-topped stack), any height | Flat rescore of trees, ignoring height |
+**All Nature's Spirit cards are purely additive.** None override or replace base terrain scoring; each layers bonus points on top of normal, unmodified scoring.
 
-**Mode interpretation:**
-- **add**: Spirit points are in ADDITION to normal scoring. Base categories unchanged; spirit row gets the bonus.
-- **replace**: Spirit REPLACES the named category entirely. That category shows 0 in the breakdown; spirit row shows the replacement score.
+| Spirit ID | Name | Type | Scoring Rule | Example |
+|-----------|------|------|--------------|---------|
+| spi_001 | Owl | Per-feature bonus | +3 points per bush (height-1 tree) on board | Normal bushes score 1 each; Owl adds 3 per bush |
+| spi_002 | Lion | Group-size bonus | +2 pts per group of 1–2 yellows; +10 pts per group of 3+ yellows | Groups scored by size, base 5-per-group still applies |
+| spi_003 | Butterfly | Group-size bonus | +5 points per field (including lone yellows) | Even singles count toward spirit bonus |
+| spi_004 | Dragonfly | Per-feature bonus | +2 points per blue token | River unchanged; spirit adds on top |
+| spi_005 | Frog | Per-feature bonus | +1 point per tree (green-topped stack, any height) | Trees unchanged; spirit adds on top |
+| spi_006 | Heron | Per-feature bonus | +1 point per mountain (gray-topped stack, any height), no adjacency requirement | All mountains count; base adjacency rule still applies |
+| spi_007 | Stork | Per-feature bonus | +1 point per building (red-topped stack) | Buildings unchanged; spirit adds on top |
+| spi_008 | Cat | Threshold bonus | +10 pts per building with 2+ neighbor colors; +5 pts with 1 color | Easier threshold than base (3 colors); both rules apply |
+| spi_009 | Squirrel | Per-feature bonus | +1 point per tree (green-topped stack, any height) | Trees unchanged; spirit adds on top |
+| spi_010 | Badger | Per-feature bonus | +3 points per tree (green-topped stack), any height | All tree heights count equally; base 1/3/7 still applies |
+
+**Gating mechanic:** A spirit card has exactly **one** cube. The bonus applies only if that cube was placed on the board during play. If placed, every matching instance across the board counts (not just the placement-requirement instance). Entry is manual: which spirit (or none) and whether the cube was placed (yes/no).
 
 **Status**: All values are PLACEHOLDER — to be replaced when user provides real card data.
