@@ -9,21 +9,19 @@ import { topology } from "./topology";
 export interface SpiritCard {
   id: string;
   name: string;
-  mode: "add" | "replace";
-  replaces?: string; // category id if mode === "replace"
   score(board: HarmoniesBoardState): { points: number; cells: CellId[] };
 }
 
 // Placeholder scoring functions — will be replaced with real rules once card data is verified.
 const spiritScores = {
   spi_001: (board: HarmoniesBoardState) => {
-    // Owl (add): +1 per bush (h1 green)
-    const bushes = board.cells.filter((c) => c.stack[0] === "green" && c.stack.length === 1);
-    return { points: bushes.length, cells: bushes.map((c) => c.id) };
+    // Owl (additive): +3 pts per bush (height-1 tree)
+    const bushes = board.cells.filter((c) => c.stack.at(-1) === "green" && c.stack.length === 1);
+    return { points: 3 * bushes.length, cells: bushes.map((c) => c.id) };
   },
 
   spi_002: (board: HarmoniesBoardState) => {
-    // Lion (replace fields): 2 pts per field of 1-2 yellows; 10 pts per 3+
+    // Lion (additive): +2 pts per group of 1-2 yellows; +10 pts per group of 3+
     const topo = topology(board.boardSide);
     const yellows = board.cells.filter((c) => c.stack.at(-1) === "yellow").map((c) => c.id);
     const groups = connectedComponents(yellows, topo.neighbors);
@@ -41,7 +39,7 @@ const spiritScores = {
   },
 
   spi_003: (board: HarmoniesBoardState) => {
-    // Butterfly (replace fields): 5 pts per field (including singles)
+    // Butterfly (additive): +5 pts per field (including singles)
     const topo = topology(board.boardSide);
     const yellows = board.cells.filter((c) => c.stack.at(-1) === "yellow").map((c) => c.id);
     const groups = connectedComponents(yellows, topo.neighbors);
@@ -62,7 +60,7 @@ const spiritScores = {
   },
 
   spi_006: (board: HarmoniesBoardState) => {
-    // Heron (replace mountains): 1 pt per gray, no adjacency
+    // Heron (additive): +1 pt per mountain (gray-topped stack), no adjacency required
     const grays = board.cells.filter((c) => c.stack.at(-1) === "gray");
     return { points: grays.length, cells: grays.map((c) => c.id) };
   },
@@ -74,7 +72,7 @@ const spiritScores = {
   },
 
   spi_008: (board: HarmoniesBoardState) => {
-    // Cat (replace buildings): 10 pts per building with 2+ colors; 5 pts with 1
+    // Cat (additive): +10 pts per building with 2+ neighbor colors; +5 pts with 1 color
     const topo = topology(board.boardSide);
     let points = 0;
     const cells: CellId[] = [];
@@ -97,79 +95,23 @@ const spiritScores = {
   },
 
   spi_010: (board: HarmoniesBoardState) => {
-    // Badger (replace trees): flat 3 points per tree (green-topped stack),
-    // regardless of height. A board-only rescore of the trees category.
+    // Badger (additive): +3 pts per tree (green-topped stack), any height
     const trees = board.cells.filter((c) => c.stack.at(-1) === "green");
     return { points: 3 * trees.length, cells: trees.map((c) => c.id) };
   },
 };
 
 export const SPIRIT_CARDS: SpiritCard[] = [
-  {
-    id: "spi_001",
-    name: "Owl",
-    mode: "add",
-    score: spiritScores.spi_001,
-  },
-  {
-    id: "spi_002",
-    name: "Lion",
-    mode: "replace",
-    replaces: "fields",
-    score: spiritScores.spi_002,
-  },
-  {
-    id: "spi_003",
-    name: "Butterfly",
-    mode: "replace",
-    replaces: "fields",
-    score: spiritScores.spi_003,
-  },
-  {
-    id: "spi_004",
-    name: "Dragonfly",
-    mode: "add",
-    score: spiritScores.spi_004,
-  },
-  {
-    id: "spi_005",
-    name: "Frog",
-    mode: "add",
-    score: spiritScores.spi_005,
-  },
-  {
-    id: "spi_006",
-    name: "Heron",
-    mode: "replace",
-    replaces: "mountains",
-    score: spiritScores.spi_006,
-  },
-  {
-    id: "spi_007",
-    name: "Stork",
-    mode: "add",
-    score: spiritScores.spi_007,
-  },
-  {
-    id: "spi_008",
-    name: "Cat",
-    mode: "replace",
-    replaces: "buildings",
-    score: spiritScores.spi_008,
-  },
-  {
-    id: "spi_009",
-    name: "Squirrel",
-    mode: "add",
-    score: spiritScores.spi_009,
-  },
-  {
-    id: "spi_010",
-    name: "Badger",
-    mode: "replace",
-    replaces: "trees",
-    score: spiritScores.spi_010,
-  },
+  { id: "spi_001", name: "Owl", score: spiritScores.spi_001 },
+  { id: "spi_002", name: "Lion", score: spiritScores.spi_002 },
+  { id: "spi_003", name: "Butterfly", score: spiritScores.spi_003 },
+  { id: "spi_004", name: "Dragonfly", score: spiritScores.spi_004 },
+  { id: "spi_005", name: "Frog", score: spiritScores.spi_005 },
+  { id: "spi_006", name: "Heron", score: spiritScores.spi_006 },
+  { id: "spi_007", name: "Stork", score: spiritScores.spi_007 },
+  { id: "spi_008", name: "Cat", score: spiritScores.spi_008 },
+  { id: "spi_009", name: "Squirrel", score: spiritScores.spi_009 },
+  { id: "spi_010", name: "Badger", score: spiritScores.spi_010 },
 ];
 
 export function applySpirit(
@@ -189,25 +131,7 @@ export function applySpirit(
 
   const { points: spiritPoints, cells: spiritCells } = card.score(board);
 
-  // For additive spirits, base breakdown unchanged; spirit row gets the bonus
-  if (card.mode === "add") {
-    return {
-      spirit: { id: "spirit", label: "Spirit", points: spiritPoints, cells: spiritCells },
-      modifiedBreakdown: baseBreakdown,
-    };
-  }
-
-  // For replacing spirits, zero out the replaced category and put all points in spirit
-  if (card.mode === "replace" && card.replaces) {
-    const modified = baseBreakdown.map((cat) =>
-      cat.id === card.replaces ? { ...cat, points: 0, cells: [] } : cat,
-    );
-    return {
-      spirit: { id: "spirit", label: "Spirit", points: spiritPoints, cells: spiritCells },
-      modifiedBreakdown: modified,
-    };
-  }
-
+  // All spirits are additive: base breakdown unchanged, spirit row gets the bonus
   return {
     spirit: { id: "spirit", label: "Spirit", points: spiritPoints, cells: spiritCells },
     modifiedBreakdown: baseBreakdown,
