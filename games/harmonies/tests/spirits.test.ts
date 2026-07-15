@@ -10,17 +10,6 @@ describe("Spirit Cards", () => {
     expect(ids.size).toBe(10);
   });
 
-  it("every card is marked add or replace; replace cards name a real category", () => {
-    const categoryIds = ["trees", "mountains", "fields", "buildings", "water", "animals"];
-    for (const card of SPIRIT_CARDS) {
-      expect(["add", "replace"]).toContain(card.mode);
-      if (card.mode === "replace") {
-        expect(card.replaces).toBeDefined();
-        expect(categoryIds).toContain(card.replaces);
-      }
-    }
-  });
-
   it('applySpirit("none") returns unchanged breakdown with spirit=0', () => {
     const board = boardWith("A", [[0, 0, "green"]]);
     const base = score(board, { spirit: "none", animalCards: [] });
@@ -29,9 +18,9 @@ describe("Spirit Cards", () => {
     expect(modifiedBreakdown).toEqual(base.categories);
   });
 
-  it("Owl (add): spirit adds +1 per bush, base unchanged", () => {
+  it("Owl (additive): spirit adds +3 per bush, base trees unchanged", () => {
     // Two bushes (single h1 greens) normally score 1+1=2 trees.
-    // Owl adds +1 per bush = +2 spirit bonus.
+    // Owl adds +3 per bush = +6 spirit bonus (on top of base 2).
     const board = boardWith("A", [
       [0, 0, "green"],
       [1, 0, "green"],
@@ -40,11 +29,12 @@ describe("Spirit Cards", () => {
     const { spirit, modifiedBreakdown } = applySpirit("spi_001", board, base.categories);
 
     expect(modifiedBreakdown.find((c) => c.id === "trees")!.points).toBe(2); // base unchanged
-    expect(spirit.points).toBe(2); // +1 per bush
+    expect(spirit.points).toBe(6); // +3 per bush
   });
 
-  it("Lion (replace fields): rescores fields by group size", () => {
-    // Three yellows in a group (touching): base rule = 5, Lion = 10 (group 3+)
+  it("Lion (additive): adds +2 per 1-2 yellows, +10 per 3+ per group", () => {
+    // Three yellows in a group (touching): base rule = 5
+    // Lion adds +10 (group of 3+) on top of the base 5.
     const board = boardWith("A", [
       [0, 3, "yellow"],
       [0, 4, "yellow"],
@@ -54,14 +44,14 @@ describe("Spirit Cards", () => {
     const { spirit, modifiedBreakdown } = applySpirit("spi_002", board, base.categories);
 
     const fieldsAfter = modifiedBreakdown.find((c) => c.id === "fields")!;
-    expect(fieldsAfter.points).toBe(0); // replaced
-    expect(spirit.points).toBe(10); // Lion: 3+ yellows = 10
+    expect(fieldsAfter.points).toBe(5); // base unchanged
+    expect(spirit.points).toBe(10); // Lion: 3+ yellows = +10
   });
 
-  it("Butterfly (replace fields): scores all yellows including singles", () => {
+  it("Butterfly (additive): adds +5 per field including singles", () => {
     // Two groups: (0,0)-(1,0) pair and (3,0)-(3,1)-(4,0) connected triple
     // Base rule = 5 + 5 = 10 (only groups of 2+)
-    // Butterfly scores each group (even singles) = 2 groups * 5 = 10
+    // Butterfly adds 5 per group (even singles) = 2 groups * 5 = +10
     const board = boardWith("A", [
       [0, 0, "yellow"],
       [1, 0, "yellow"],
@@ -73,32 +63,30 @@ describe("Spirit Cards", () => {
     const { spirit, modifiedBreakdown } = applySpirit("spi_003", board, base.categories);
 
     const fieldsAfter = modifiedBreakdown.find((c) => c.id === "fields")!;
-    expect(fieldsAfter.points).toBe(0); // replaced
-    // 2 groups * 5 = 10
-    expect(spirit.points).toBe(10); // 2 groups * 5
+    expect(fieldsAfter.points).toBe(10); // base unchanged: 5 + 5
+    expect(spirit.points).toBe(10); // +5 per group (2 groups)
   });
 
-  it("Heron (replace mountains): scores all mountains regardless of adjacency", () => {
-    // One isolated gray and one adjacent pair: base = 0 + (1+3) = 4
-    // Heron scores all = 1 + 1 + 2 = 4 (but actually tallies differently)
+  it("Heron (additive): adds +1 per mountain, no adjacency required", () => {
+    // Three grays, all adjacent: base = 1 + 1 + 3 = 5
+    // Heron adds +1 per gray (no adjacency check) = +3 on top of base 5.
     const board = boardWith("A", [
-      [0, 0, "gray"], // isolated
-      [1, 0, "gray"], // adjacent
-      [1, 1, "gray", "gray"], // adjacent
+      [0, 0, "gray"],
+      [1, 0, "gray"],
+      [1, 1, "gray", "gray"], // h2
     ]);
     const base = score(board, { spirit: "none", animalCards: [] });
     const { spirit, modifiedBreakdown } = applySpirit("spi_006", board, base.categories);
 
     const mountainsAfter = modifiedBreakdown.find((c) => c.id === "mountains")!;
-    expect(mountainsAfter.points).toBe(0); // replaced
-    expect(spirit.points).toBe(3); // 1 + 1 + 1 (three mountain cells)
+    expect(mountainsAfter.points).toBe(5); // base unchanged
+    expect(spirit.points).toBe(3); // +1 per mountain cell (3 cells)
   });
 
-  it("Badger (replace trees): flat 3 per tree, and does not touch animal card points", () => {
+  it("Badger (additive): adds +3 per tree, and does not touch animal card points", () => {
     // Two trees of different heights: base = 1 (bush) + 7 (h3) = 8.
-    // Badger replaces trees with flat 3 each = 6, regardless of height.
-    // Animal card points must survive (regression guard: Badger used to
-    // replace "animals" and silently zero them).
+    // Badger adds +3 per tree = +6 on top of base 8.
+    // Animal card points must survive (regression guard).
     const board = boardWith("A", [
       [0, 0, "green"], // bush, base 1
       [1, 0, "brown", "brown", "green"], // h3 tree, base 7
@@ -112,10 +100,10 @@ describe("Spirit Cards", () => {
     const spirit = breakdown.categories.find((c) => c.id === "spirit")!;
     const animals = breakdown.categories.find((c) => c.id === "animals")!;
 
-    expect(trees.points).toBe(0); // replaced
-    expect(spirit.points).toBe(6); // 2 trees * 3
-    expect(animals.points).toBe(6); // animal cards untouched
-    expect(breakdown.total).toBe(12); // 6 + 6
+    expect(trees.points).toBe(8); // base unchanged: 1 + 7
+    expect(spirit.points).toBe(6); // +3 per tree (2 trees)
+    expect(animals.points).toBe(3); // animal cards untouched
+    expect(breakdown.total).toBe(17); // 8 + 6 + 3
   });
 
   it("spirit unknown id throws", () => {
@@ -126,8 +114,8 @@ describe("Spirit Cards", () => {
   it("total always equals sum of all category points including spirit", () => {
     const configs = [
       { spirit: "none", animalCards: [] },
-      { spirit: "spi_001", animalCards: [] }, // Owl add
-      { spirit: "spi_002", animalCards: [] }, // Lion replace
+      { spirit: "spi_001", animalCards: [] }, // Owl additive
+      { spirit: "spi_002", animalCards: [] }, // Lion additive
     ];
     const board = boardWith("A", [
       [0, 0, "green"],
