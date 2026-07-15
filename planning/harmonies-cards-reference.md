@@ -1,51 +1,52 @@
-# Harmonies Cards Reference (M3 Placeholder Data)
+# Harmonies Cards Reference
 
-**IMPORTANT: This is temporary placeholder data to unblock M3 implementation.**
-Real card values will be provided by the user and transcribed here (data-only update).
+Single source of truth for card scoring data. The TypeScript catalogs
+(`games/harmonies/animals.ts`, `games/harmonies/spirits.ts`) transcribe this file;
+tests spot-check values against it.
 
 ## Animal Cards (32 cards)
 
-| Card ID | Name | Cubes | Track Values | Source |
-|---------|------|-------|--------------|--------|
-| ani_001 | Ant | 3 | 1, 3, 5 | PLACEHOLDER |
-| ani_002 | Antelope | 4 | 1, 2, 4, 6 | PLACEHOLDER |
-| ani_003 | Bear | 4 | 2, 4, 6, 8 | PLACEHOLDER |
-| ani_004 | Bird | 3 | 1, 2, 4 | PLACEHOLDER |
-| ani_005 | Butterfly | 2 | 3, 5 | PLACEHOLDER |
-| ani_006 | Cat | 3 | 2, 4, 6 | PLACEHOLDER |
-| ani_007 | Crab | 3 | 1, 3, 4 | PLACEHOLDER |
-| ani_008 | Crow | 2 | 2, 4 | PLACEHOLDER |
-| ani_009 | Deer | 4 | 1, 3, 5, 7 | PLACEHOLDER |
-| ani_010 | Dolphin | 3 | 2, 5, 7 | PLACEHOLDER |
-| ani_011 | Eagle | 3 | 3, 5, 7 | PLACEHOLDER |
-| ani_012 | Elephant | 4 | 2, 4, 6, 8 | PLACEHOLDER |
-| ani_013 | Fennec Fox | 2 | 1, 3 | PLACEHOLDER |
-| ani_014 | Flamingo | 3 | 1, 3, 5 | PLACEHOLDER |
-| ani_015 | Frog | 3 | 1, 2, 4 | PLACEHOLDER |
-| ani_016 | Giraffe | 4 | 1, 4, 7, 10 | PLACEHOLDER |
-| ani_017 | Gorilla | 3 | 2, 5, 8 | PLACEHOLDER |
-| ani_018 | Hedgehog | 2 | 1, 3 | PLACEHOLDER |
-| ani_019 | Hippo | 4 | 3, 5, 7, 10 | PLACEHOLDER |
-| ani_020 | Hummingbird | 2 | 2, 3 | PLACEHOLDER |
-| ani_021 | Lemur | 3 | 1, 2, 3 | PLACEHOLDER |
-| ani_022 | Lion | 4 | 2, 5, 8, 11 | PLACEHOLDER |
-| ani_023 | Meerkat | 3 | 1, 4, 6 | PLACEHOLDER |
-| ani_024 | Mouse | 3 | 1, 2, 3 | PLACEHOLDER |
-| ani_025 | Otter | 3 | 2, 4, 6 | PLACEHOLDER |
-| ani_026 | Owl | 3 | 1, 4, 7 | PLACEHOLDER |
-| ani_027 | Peacock | 4 | 2, 5, 8, 10 | PLACEHOLDER |
-| ani_028 | Penguin | 3 | 2, 4, 6 | PLACEHOLDER |
-| ani_029 | Rabbit | 2 | 1, 2 | PLACEHOLDER |
-| ani_030 | Raccoon | 3 | 1, 3, 5 | PLACEHOLDER |
-| ani_031 | Squirrel | 3 | 1, 2, 4 | PLACEHOLDER |
-| ani_032 | Turtle | 3 | 1, 3, 5 | PLACEHOLDER |
+Transcribed from the user's physical cards (CSV, 2026-07). The `Color` column is the
+card's color band — not used for scoring, kept here to match the physical cards.
 
-**Track interpretation:** `Track Values` = points visible in the topmost uncovered cube slot.
-For a card with track `[1, 3, 5]`:
-- 0 cubes placed → score 0
-- 1 cube placed → score 1 (first slot uncovered)
-- 2 cubes placed → score 3 (second slot uncovered)
-- 3 cubes placed → score 5 (third slot uncovered, all cubes placed → no more uncovered slots, score is last value)
+`Track Values` = points visible in the topmost uncovered cube slot. For a card with
+track `[3, 6, 10, 15]`: 0 cubes placed → 0; 1 cube → 3; 2 cubes → 6; 3 cubes → 10;
+4 cubes (all placed) → 15. `num_cubes` equals the number of track values.
+
+| Card ID | Name | Color | Cubes | Track Values |
+|---------|------|-------|-------|--------------|
+| ani_001 | Bat | Gray | 4 | 3, 6, 10, 15 |
+| ani_002 | Fennec Fox | Gray | 3 | 4, 9, 16 |
+| ani_003 | Vulture | Gray | 2 | 5, 11 |
+| ani_004 | Meerkat | Gray | 4 | 2, 5, 9, 14 |
+| ani_005 | Macaque | Gray | 2 | 5, 11 |
+| ani_006 | Penguin | Gray | 3 | 4, 10, 16 |
+| ani_007 | Arctic Fox | Yellow | 3 | 5, 10, 17 |
+| ani_008 | Ladybug | Yellow | 5 | 2, 5, 8, 12, 17 |
+| ani_009 | Llama | Yellow | 2 | 5, 12 |
+| ani_010 | Raccoon | Yellow | 2 | 6, 12 |
+| ani_011 | Crow | Yellow | 2 | 4, 9 |
+| ani_012 | Panther | Yellow | 2 | 5, 11 |
+| ani_013 | Otter | Blue | 3 | 5, 10, 16 |
+| ani_014 | Frog | Blue | 5 | 2, 4, 6, 10, 15 |
+| ani_015 | Alligator | Blue | 3 | 4, 9, 15 |
+| ani_016 | Stingray | Blue | 3 | 4, 10, 16 |
+| ani_017 | Fish | Blue | 4 | 3, 6, 10, 16 |
+| ani_018 | Flamingo | Blue | 3 | 4, 10, 16 |
+| ani_019 | Duck | Blue | 4 | 2, 4, 8, 13 |
+| ani_020 | Gecko | Red | 3 | 5, 10, 16 |
+| ani_021 | Hedgehog | Red | 2 | 5, 12 |
+| ani_022 | Peacock | Red | 3 | 5, 10, 17 |
+| ani_023 | Mouse | Red | 3 | 5, 10, 17 |
+| ani_024 | Squirrel | Red | 3 | 4, 9, 15 |
+| ani_025 | Wolf | Green | 3 | 4, 10, 16 |
+| ani_026 | Rabbit | Green | 3 | 5, 10, 17 |
+| ani_027 | Warthog | Green | 3 | 4, 8, 13 |
+| ani_028 | Koala | Green | 4 | 3, 6, 10, 15 |
+| ani_029 | Kookaburra | Green | 3 | 5, 11, 18 |
+| ani_030 | Macaw | Green | 3 | 4, 9, 14 |
+| ani_031 | Bear | Green | 2 | 5, 11 |
+| ani_032 | Bee | Green | 2 | 8, 18 |
 
 ## Nature's Spirit Cards (10 cards)
 

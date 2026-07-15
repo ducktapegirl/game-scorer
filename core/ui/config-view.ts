@@ -24,6 +24,7 @@ export function renderConfig<C extends Record<string, ConfigFieldValue>>(
       const label = document.createElement("label");
       label.append(`${field.label}: `);
       const select = document.createElement("select");
+      select.className = "select";
       for (const option of field.options) {
         const o = document.createElement("option");
         o.value = option.id;
@@ -40,6 +41,7 @@ export function renderConfig<C extends Record<string, ConfigFieldValue>>(
     } else {
       const p = document.createElement("p");
       const label = document.createElement("label");
+      label.className = "checkbox";
       const checkbox = document.createElement("input");
       checkbox.type = "checkbox";
       checkbox.checked = config[field.id] === true;
@@ -75,6 +77,7 @@ function renderCounterList(
 
     const minus = document.createElement("button");
     minus.type = "button";
+    minus.className = "btn btn--ghost btn--sm";
     minus.textContent = "−";
     minus.disabled = entry.count <= 0;
     minus.addEventListener("click", () =>
@@ -83,6 +86,7 @@ function renderCounterList(
 
     const plus = document.createElement("button");
     plus.type = "button";
+    plus.className = "btn btn--ghost btn--sm";
     plus.textContent = "+";
     plus.disabled = item?.max !== undefined && entry.count >= item.max;
     plus.addEventListener("click", () =>
@@ -91,6 +95,7 @@ function renderCounterList(
 
     const remove = document.createElement("button");
     remove.type = "button";
+    remove.className = "btn btn--ghost btn--sm";
     remove.textContent = "Remove";
     remove.addEventListener("click", () => update(entries.filter((e) => e.id !== entry.id)));
 
@@ -99,23 +104,43 @@ function renderCounterList(
   }
   container.append(list);
 
+  // Checkbox-grid adder: tick any number of not-yet-added items and "Add
+  // selected" adds them all at once (each starting at count 0; counts are then
+  // set per row above). The grid lays checkboxes across the available width.
   const available = field.items.filter((i) => !entries.some((e) => e.id === i.id));
-  const adder = document.createElement("p");
-  const select = document.createElement("select");
+  const adder = document.createElement("div");
+
+  const grid = document.createElement("div");
+  grid.style.display = "grid";
+  grid.style.gridTemplateColumns = "repeat(auto-fill, minmax(12em, 1fr))";
+  const boxes: HTMLInputElement[] = [];
   for (const item of available) {
-    const o = document.createElement("option");
-    o.value = item.id;
-    o.textContent = item.label;
-    select.append(o);
+    const label = document.createElement("label");
+    label.className = "checkbox";
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.value = item.id;
+    label.append(checkbox, ` ${item.label}`);
+    grid.append(label);
+    boxes.push(checkbox);
   }
+  container.append(grid);
+
+  const buttonRow = document.createElement("div");
+  buttonRow.className = "button-group";
   const add = document.createElement("button");
   add.type = "button";
-  add.textContent = "Add";
+  add.className = "btn btn--ghost btn--block";
+  add.textContent = "Add selected";
   add.disabled = available.length === 0;
   add.addEventListener("click", () => {
-    if (select.value) update([...entries, { id: select.value, count: 0 }]);
+    const chosen = boxes.filter((b) => b.checked).map((b) => b.value);
+    if (chosen.length > 0) {
+      update([...entries, ...chosen.map((id) => ({ id, count: 0 }))]);
+    }
   });
-  adder.append(select, " ", add);
+  buttonRow.append(add);
+  adder.append(grid, buttonRow);
   container.append(adder);
 
   return container;

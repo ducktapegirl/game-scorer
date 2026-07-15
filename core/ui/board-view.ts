@@ -86,21 +86,29 @@ export function renderBoard(opts: BoardViewOptions): SVGSVGElement {
 
     const polygon = document.createElementNS(SVG_NS, "polygon");
     polygon.setAttribute("points", corners.map((p) => `${p.x},${p.y}`).join(" "));
-    polygon.setAttribute("fill", top?.displayColor ?? "white");
-    polygon.setAttribute("stroke", "black");
+    // Placed pieces keep their vocabulary color (presentation attribute); empty
+    // cells take the design-system surface tone. Chrome (the outline) is
+    // token-driven via inline style, which overrides the fill attribute cleanly
+    // and resolves the CSS var once the SVG is in the document.
+    if (top?.displayColor) {
+      polygon.setAttribute("fill", top.displayColor);
+    } else {
+      polygon.style.fill = "var(--color-surface)";
+    }
+    polygon.style.stroke = id === selected ? "var(--color-primary)" : "var(--color-border-strong)";
     polygon.setAttribute("stroke-width", id === selected ? "0.12" : "0.03");
     group.append(polygon);
 
     if (top) {
-      // e.g. "G3" = a green-topped stack of height 3; height shown only when
-      // the stack is taller than one token.
+      // e.g. "Gn3" = a green-topped stack of height 3; height shown only
+      // when the stack is taller than one token.
       const text = document.createElementNS(SVG_NS, "text");
       text.setAttribute("x", String(center.x));
       text.setAttribute("y", String(center.y));
       text.setAttribute("text-anchor", "middle");
       text.setAttribute("dominant-baseline", "central");
       text.setAttribute("font-size", "0.7");
-      text.textContent = cellLabel(stack);
+      text.textContent = cellLabel(stack, tokens);
       group.append(text);
     }
 
@@ -109,8 +117,9 @@ export function renderBoard(opts: BoardViewOptions): SVGSVGElement {
   return svg;
 }
 
-export function cellLabel(stack: readonly string[]): string {
+export function cellLabel(stack: readonly string[], tokens: TokenDef[]): string {
   if (stack.length === 0) return "";
-  const initial = stack[stack.length - 1]!.charAt(0).toUpperCase();
-  return stack.length > 1 ? `${initial}${stack.length}` : initial;
+  const topId = stack[stack.length - 1]!;
+  const abbr = tokens.find((t) => t.id === topId)?.abbr ?? topId.charAt(0).toUpperCase();
+  return stack.length > 1 ? `${abbr}${stack.length}` : abbr;
 }

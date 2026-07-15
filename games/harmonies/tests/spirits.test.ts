@@ -93,7 +93,7 @@ describe("Spirit Cards", () => {
     ]);
     const breakdown = score(board, {
       spirit: "spi_010",
-      animalCards: [{ id: "ani_001", count: 2 }], // Ant: 3 points
+      animalCards: [{ id: "ani_001", count: 2 }], // Bat: track[1] = 6 points
     });
 
     const trees = breakdown.categories.find((c) => c.id === "trees")!;

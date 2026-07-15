@@ -79,7 +79,7 @@ describe("score() integration", () => {
     // Single green = 1 tree point. Ant card with 2 cubes = track[1] = 3. Owl spirit (add) = +3 per bush = +3 for that green.
     const breakdown = score(boardWith("A", [[0, 0, "green"]]), {
       spirit: "spi_001", // Owl (add)
-      animalCards: [{ id: "ani_001", count: 2 }], // Ant with 2 cubes
+      animalCards: [{ id: "ani_001", count: 2 }], // Bat with 2 cubes
     });
     expect(points(breakdown, "trees")).toBe(1);
     expect(points(breakdown, "animals")).toBe(3);

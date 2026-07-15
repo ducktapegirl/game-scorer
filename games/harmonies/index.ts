@@ -8,6 +8,7 @@ import { BOARD_VARIANTS, stackChoices } from "./entry";
 import { score, type HarmoniesBoardState } from "./rules";
 import { TOKEN_DEFS } from "./tokens";
 import { topology } from "./topology";
+import { harmoniesVision } from "./vision";
 
 export type { HarmoniesBoardState } from "./rules";
 export type { HarmoniesConfig } from "./config";
@@ -34,4 +35,5 @@ export const harmonies: GameModule<HarmoniesBoardState, HarmoniesConfig> = {
   score,
   configSchema: harmoniesConfigSchema,
   emptyConfig: EMPTY_CONFIG,
+  vision: harmoniesVision,
 };
