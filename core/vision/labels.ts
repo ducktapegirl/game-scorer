@@ -19,6 +19,9 @@ export interface PhotoLabels {
   // doesn't invalidate committed fixtures.
   taps: Point[];
   cells: Record<CellId, TokenId | null>; // null = empty cell
+  // Free-text provenance, for fixtures not produced by the export button
+  // (e.g. transcribed by hand). Never written by buildLabels.
+  source?: string;
 }
 
 export interface BuildLabelsOptions {
