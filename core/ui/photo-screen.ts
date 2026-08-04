@@ -20,8 +20,9 @@ import { cellPolygons, hitTest } from "./photo-overlay";
 import { createPressGesture } from "./press-gesture";
 
 // Photos are capped to this long side before sampling — plenty for a 5%-of-
-// board-width sample patch, and keeps getImageData cheap on phones.
-const MAX_CANVAS_SIDE = 1600;
+// board-width sample patch, and keeps getImageData cheap on phones. Exported
+// so the fixture harness downscales real photos exactly as the app does.
+export const MAX_CANVAS_SIDE = 1600;
 
 const CORNER_PROMPTS = ["top-left", "top-right", "bottom-right", "bottom-left"] as const;
 
