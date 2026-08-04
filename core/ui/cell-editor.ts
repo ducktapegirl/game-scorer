@@ -1,16 +1,18 @@
 // The cell editor extracted from the M2 entry screen so both it and the M5
 // photo-correction phase share one editing surface (plan decision 2). Given a
-// board and a cell, it renders the token picker → stack-choice picker → apply,
-// driven entirely by the game's stackChoices data. Stateless from the caller's
-// side: it owns only the transient "which token is mid-pick" state internally
-// and reports the final stack through onApply. Browser-default UI, no CSS.
+// board and a cell, it renders a token picker (each button applies its
+// default stack immediately) and, independently, a stack-choice picker for
+// the cell's current top token — driven entirely by the game's stackChoices
+// data, so color and height can be corrected in separate passes. Stateless:
+// it owns no UI state of its own and reports each pick through onApply.
+// Browser-default UI, no CSS.
 
 import type { BoardState, CellId, GameModule, TokenId } from "../types";
 import { button } from "./controls";
 import { stackAt } from "./entry-state";
 
 export interface CellEditorOptions<B extends BoardState> {
-  module: Pick<GameModule<B, never>, "board">;
+  module: Pick<GameModule<B, never>, "board" | "vision">;
   board: B;
   cellId: CellId;
   // A vision-flagged uncertain cell; adds a "Confirm as-is" action.
@@ -26,53 +28,49 @@ export interface CellEditorOptions<B extends BoardState> {
 export function renderCellEditor<B extends BoardState>(opts: CellEditorOptions<B>): HTMLElement {
   const { module, board, cellId, flagged, onApply, onConfirm, onCancel } = opts;
   const root = document.createElement("div");
-  // Which token the user picked when it offers more than one stack choice
-  // (e.g. green heights); null until then. Local because it's mid-gesture UI
-  // state, not board state.
-  let pendingToken: TokenId | null = null;
 
-  function render(): void {
-    root.replaceChildren();
+  const current = stackAt(board, cellId);
+  const heading = document.createElement("p");
+  heading.textContent = `Cell ${cellId} — current: ${
+    current.length > 0 ? current.join(", ") + " (bottom to top)" : "empty"
+  }`;
+  root.append(heading);
 
-    const current = stackAt(board, cellId);
-    const heading = document.createElement("p");
-    heading.textContent = `Cell ${cellId} — current: ${
-      current.length > 0 ? current.join(", ") + " (bottom to top)" : "empty"
-    }`;
-    root.append(heading);
+  const tokenButtons = document.createElement("p");
+  for (const token of module.board.tokenVocabulary) {
+    tokenButtons.append(
+      button(token.label, () => {
+        // Default to the game's raw-prediction stack for this token (e.g.
+        // Harmonies proposes a building base for red, not bare red), falling
+        // back to the first stack choice for games/tokens with no vision
+        // data. Lets color be corrected without also committing to a height.
+        const defaultStack =
+          module.vision?.proposedStack(token.id) ?? module.board.stackChoices(token.id)[0]!.stack;
+        onApply(defaultStack);
+      }),
+      " ",
+    );
+  }
+  tokenButtons.append(button("Empty", () => onApply([])));
+  root.append(tokenButtons);
 
-    const tokenButtons = document.createElement("p");
-    for (const token of module.board.tokenVocabulary) {
-      tokenButtons.append(
-        button(token.label, () => {
-          const choices = module.board.stackChoices(token.id);
-          if (choices.length === 1) {
-            onApply(choices[0]!.stack);
-          } else {
-            pendingToken = token.id;
-            render();
-          }
-        }),
-        " ",
-      );
+  // The current top token's other stack choices (e.g. green's three
+  // heights), shown regardless of which color button was just clicked, so
+  // height can be corrected independently in its own pass.
+  const topToken = current.at(-1);
+  const heightChoices = topToken !== undefined ? module.board.stackChoices(topToken) : [];
+  if (heightChoices.length > 1) {
+    const heightButtons = document.createElement("p");
+    for (const choice of heightChoices) {
+      heightButtons.append(button(choice.label, () => onApply(choice.stack)), " ");
     }
-    tokenButtons.append(button("Empty", () => onApply([])));
-    root.append(tokenButtons);
-
-    if (pendingToken !== null) {
-      const choiceButtons = document.createElement("p");
-      for (const choice of module.board.stackChoices(pendingToken)) {
-        choiceButtons.append(button(choice.label, () => onApply(choice.stack)), " ");
-      }
-      root.append(choiceButtons);
-    }
-
-    const actions = document.createElement("p");
-    if (flagged && onConfirm) actions.append(button("Confirm as-is", onConfirm), " ");
-    if (onCancel) actions.append(button("Cancel", onCancel));
-    if (actions.childNodes.length > 0) root.append(actions);
+    root.append(heightButtons);
   }
 
-  render();
+  const actions = document.createElement("p");
+  if (flagged && onConfirm) actions.append(button("Confirm as-is", onConfirm), " ");
+  if (onCancel) actions.append(button("Cancel", onCancel));
+  if (actions.childNodes.length > 0) root.append(actions);
+
   return root;
 }
