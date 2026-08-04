@@ -51,5 +51,5 @@
     "6,-1": "blue",
     "6,0": "green"
   },
-  "source": "PROVISIONAL — tile colors transcribed from the photo and taps estimated by eye, then verified against a rendered sample-point overlay. Replace with the output of the correction screen's \"Export labels\" button."
+  "source": "Tile colors CONFIRMED against the board owner's own \"Export labels\" run — 25/25 agreement, including the lone brown trunk at 2,2. Their export used a different corner-tap correspondence (cell ids differ by a flip within each column, which the app treats as equally valid) and a re-saved 4:3 copy of the photo, so its taps could not be reused. The taps here remain estimated by eye and verified against a rendered sample-point overlay."
 }
