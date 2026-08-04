@@ -417,8 +417,8 @@ export function renderPhotoScreen<B extends BoardState>(
     root.append(
       p(
         "Correct the board — tap a green or gray cell to cycle its height; " +
-          "long-press or right-click any cell to change its color or mark it empty. " +
-          'Cells marked "?" were uncertain reads worth a check.',
+          "long-press or right-click any cell to change its color, adjust its height, " +
+          'or mark it empty. Cells marked "?" were uncertain reads worth a check.',
       ),
     );
     root.append(canvas!);
