@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# A newer push to the same branch makes an in-flight run irrelevant.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      # Runs the real-photo vision fixtures in resources/fixtures/ as well as
+      # the unit tests, so a swatch or threshold change that regresses a board
+      # fails here rather than only when someone runs it locally.
+      - run: npm test
+      # tsc --noEmit plus the Vite build, per package.json.
+      - run: npm run build

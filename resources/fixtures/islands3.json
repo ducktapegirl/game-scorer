@@ -1,0 +1,55 @@
+{
+  "image": "test_image_islands3.jpg",
+  "boardSide": "B",
+  "rotation": 0,
+  "canvas": {
+    "width": 1208,
+    "height": 1600
+  },
+  "taps": [
+    {
+      "x": 0.28146,
+      "y": 0.2125
+    },
+    {
+      "x": 0.29801,
+      "y": 0.805
+    },
+    {
+      "x": 0.72185,
+      "y": 0.825
+    },
+    {
+      "x": 0.71523,
+      "y": 0.2
+    }
+  ],
+  "cells": {
+    "0,0": "gray",
+    "0,1": "yellow",
+    "0,2": "gray",
+    "0,3": "yellow",
+    "1,0": "yellow",
+    "1,1": "green",
+    "1,2": "blue",
+    "2,-1": "gray",
+    "2,0": "green",
+    "2,1": "green",
+    "2,2": "brown",
+    "3,-1": "yellow",
+    "3,0": "gray",
+    "3,1": "green",
+    "4,-2": "yellow",
+    "4,-1": "gray",
+    "4,0": "blue",
+    "4,1": "green",
+    "5,-2": "blue",
+    "5,-1": "gray",
+    "5,0": "green",
+    "6,-3": null,
+    "6,-2": "gray",
+    "6,-1": "blue",
+    "6,0": "green"
+  },
+  "source": "Tile colors CONFIRMED against the board owner's own \"Export labels\" run — 25/25 agreement, including the lone brown trunk at 2,2. Their export used a different corner-tap correspondence (cell ids differ by a flip within each column, which the app treats as equally valid) and a re-saved 4:3 copy of the photo, so its taps could not be reused. The taps here remain estimated by eye and verified against a rendered sample-point overlay."
+}

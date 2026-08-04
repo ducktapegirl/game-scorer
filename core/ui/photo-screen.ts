@@ -11,6 +11,7 @@
 import type { BoardState, CellId, GameModule, TokenId } from "../types";
 import { isUncertain } from "../vision/classify";
 import { applyHomography, type Point } from "../vision/homography";
+import { buildLabels, formatLabels } from "../vision/labels";
 import { proposeBoard, type CellDebug, type CornerTaps, type Proposal } from "../vision/propose";
 import { cellLabel, renderBoard } from "./board-view";
 import { renderCellEditor } from "./cell-editor";
@@ -19,8 +20,9 @@ import { cellPolygons, hitTest } from "./photo-overlay";
 import { createPressGesture } from "./press-gesture";
 
 // Photos are capped to this long side before sampling — plenty for a 5%-of-
-// board-width sample patch, and keeps getImageData cheap on phones.
-const MAX_CANVAS_SIDE = 1600;
+// board-width sample patch, and keeps getImageData cheap on phones. Exported
+// so the fixture harness downscales real photos exactly as the app does.
+export const MAX_CANVAS_SIDE = 1600;
 
 const CORNER_PROMPTS = ["top-left", "top-right", "bottom-right", "bottom-left"] as const;
 
@@ -49,6 +51,9 @@ export function renderPhotoScreen<B extends BoardState>(
   const root = document.createElement("div");
   let bitmap: ImageBitmap | null = null;
   let canvas: HTMLCanvasElement | null = null;
+  // The chosen file's name, recorded only so exported labels say which photo
+  // they describe.
+  let photoName = "";
   let corners: Point[] = [];
   // Quarter-turn clockwise rotations applied to the photo before anything
   // else (0/90/180/270). Some cameras store the raster sideways, and the
@@ -64,6 +69,9 @@ export function renderPhotoScreen<B extends BoardState>(
   let flags = new Set<CellId>();
   // The cell whose full editor is open (via long-press / right-click), if any.
   let editing: CellId | null = null;
+  // Exported ground-truth JSON, once the user asks for it. Non-null keeps the
+  // debug section open so the textarea stays on screen across re-renders.
+  let labels: string | null = null;
 
   function button(label: string, onClick: () => void): HTMLButtonElement {
     const b = document.createElement("button");
@@ -208,6 +216,7 @@ export function renderPhotoScreen<B extends BoardState>(
     workingBoard = null;
     flags = new Set();
     editing = null;
+    labels = null;
     render();
   }
 
@@ -257,7 +266,12 @@ export function renderPhotoScreen<B extends BoardState>(
   // --- lifecycle ------------------------------------------------------------
 
   async function loadFile(file: File): Promise<void> {
-    bitmap = await createImageBitmap(file);
+    // "from-image" is explicit so the raster matches what any EXIF-aware tool
+    // (including the fixture harness in games/*/tests) sees. Left to the
+    // browser default, some engines apply EXIF orientation and some don't,
+    // which the app itself absorbs but a committed fixture cannot.
+    bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+    photoName = file.name;
     canvas = document.createElement("canvas");
     canvas.addEventListener("click", (event) => {
       // Corner-tap capture — inert once four corners are down (result phase).
@@ -278,6 +292,7 @@ export function renderPhotoScreen<B extends BoardState>(
     workingBoard = null;
     flags = new Set();
     editing = null;
+    labels = null;
     render();
   }
 
@@ -301,6 +316,7 @@ export function renderPhotoScreen<B extends BoardState>(
       proposal.debug.filter((d) => isUncertain(d.classification)).map((d) => d.cellId),
     );
     editing = null;
+    labels = null;
     render();
   }
 
@@ -333,6 +349,25 @@ export function renderPhotoScreen<B extends BoardState>(
       }
     }
     return table;
+  }
+
+  // Snapshot the corrected board as ground truth for the vision fixtures. The
+  // ordinary correction workflow is the labeling workflow: fix what's wrong,
+  // then export. Copying to the clipboard is best-effort (it needs a secure
+  // context and can be refused), so the JSON is always shown in a textarea too.
+  function exportLabels(): void {
+    labels = formatLabels(
+      buildLabels({
+        image: photoName,
+        board: workingBoard!,
+        cells: topology.cells,
+        rotation,
+        canvas: { width: canvas!.width, height: canvas!.height },
+        taps: corners,
+      }),
+    );
+    void navigator.clipboard?.writeText(labels).catch(() => {});
+    render();
   }
 
   // --- render ---------------------------------------------------------------
@@ -426,10 +461,39 @@ export function renderPhotoScreen<B extends BoardState>(
     root.append(accept);
 
     const details = document.createElement("details");
+    // Stay open once labels have been exported, so the textarea survives the
+    // re-render that put it there.
+    details.open = labels !== null;
     const summary = document.createElement("summary");
     summary.textContent =
       "Debug — per-cell vote results (Mean RGB feeds swatch recalibration)";
-    details.append(summary, renderDebugTable(proposed.debug));
+
+    // The fitted white balance. Gains far from 1 mean an unusual light; photo
+    // and palette gains close to each other mean this photo was already lit
+    // much like the swatches were.
+    const gains = (label: string, g: readonly number[]): string =>
+      `${label} ${g.map((v) => v.toFixed(2)).join(" / ")}`;
+    const balance = p(
+      `Color correction (R/G/B gains) — ` +
+        `${gains("photo", proposed.normalization.photo.gain)}, ` +
+        `${gains("palette", proposed.normalization.palette.gain)}`,
+    );
+
+    const exportControls = document.createElement("p");
+    exportControls.append(
+      button("Export labels", exportLabels),
+      " — copies the corrected board as ground truth for the vision tests.",
+    );
+
+    details.append(summary, balance, exportControls);
+    if (labels !== null) {
+      const textarea = document.createElement("textarea");
+      textarea.readOnly = true;
+      textarea.rows = 14;
+      textarea.value = labels;
+      details.append(textarea);
+    }
+    details.append(renderDebugTable(proposed.debug));
     root.append(details);
   }
 

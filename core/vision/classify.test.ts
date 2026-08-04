@@ -118,12 +118,14 @@ describe("isUncertain", () => {
     );
   });
 
-  it("flags a patch mostly covered by a cube (ignored share over 0.6)", () => {
-    expect(isUncertain(cls({ voteShare: 0.9, ignoredShare: 0.7 }))).toBe(true);
+  // A cube over half the patch is the one signal that catches the classifier's
+  // remaining real-photo miss, which otherwise looks entirely confident.
+  it("flags a patch largely covered by a cube (ignored share over 0.45)", () => {
+    expect(isUncertain(cls({ voteShare: 0.9, ignoredShare: 0.5 }))).toBe(true);
   });
 
-  it("treats an ignored share of exactly 0.6 as confident", () => {
-    expect(isUncertain(cls({ voteShare: 0.9, ignoredShare: 0.6 }))).toBe(false);
+  it("treats an ignored share of exactly 0.45 as confident", () => {
+    expect(isUncertain(cls({ voteShare: 0.9, ignoredShare: 0.45 }))).toBe(false);
   });
 
   it("does not flag a confident read", () => {

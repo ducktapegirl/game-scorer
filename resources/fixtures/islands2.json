@@ -1,0 +1,55 @@
+{
+  "image": "test_image_islands2.jpg",
+  "boardSide": "B",
+  "rotation": 0,
+  "canvas": {
+    "width": 1205,
+    "height": 1600
+  },
+  "taps": [
+    {
+      "x": 0.28552,
+      "y": 0.205
+    },
+    {
+      "x": 0.31873,
+      "y": 0.715
+    },
+    {
+      "x": 0.69721,
+      "y": 0.715
+    },
+    {
+      "x": 0.68393,
+      "y": 0.2
+    }
+  ],
+  "cells": {
+    "0,0": "yellow",
+    "0,1": "gray",
+    "0,2": "blue",
+    "0,3": null,
+    "1,0": "blue",
+    "1,1": "red",
+    "1,2": "brown",
+    "2,-1": null,
+    "2,0": "blue",
+    "2,1": null,
+    "2,2": "gray",
+    "3,-1": "green",
+    "3,0": "blue",
+    "3,1": "green",
+    "4,-2": "yellow",
+    "4,-1": "yellow",
+    "4,0": "blue",
+    "4,1": "brown",
+    "5,-2": "blue",
+    "5,-1": "blue",
+    "5,0": "blue",
+    "6,-3": "red",
+    "6,-2": "yellow",
+    "6,-1": "yellow",
+    "6,0": "blue"
+  },
+  "source": "PROVISIONAL — tile colors transcribed from the photo and taps estimated by eye, then verified against a rendered sample-point overlay. Replace with the output of the correction screen's \"Export labels\" button."
+}
