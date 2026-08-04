@@ -10,6 +10,7 @@
 
 import { readdirSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { isUncertain } from "../../../core/vision/classify";
 import { proposeBoard } from "../../../core/vision/propose";
 import { harmonies } from "../index";
 import { topology, type BoardSide } from "../topology";
@@ -27,10 +28,13 @@ const fixtures = readdirSync(FIXTURE_DIR)
 // every photo. These are ratchets: raise one when the pipeline earns it, never
 // lower one to make a run go green.
 const MIN_CORRECT: Record<string, number> = {
-  // Baseline as the harness landed, before any classifier change: 22/25, with
-  // the washed-out red building read as green, a cube-covered blue read as
-  // gray, and an empty cream hex read as yellow.
-  "islands3.json": 22,
+  // The one cell the pipeline still misses anywhere: a lone brown token under
+  // warm tungsten, which normalizes to within ~15 ΔE of an empty cream hex and
+  // has an animal cube over half of it. A swatch close enough to catch it
+  // would start reading genuinely empty hexes as brown, so it is left to the
+  // correction UI — `flags every cell it gets wrong` below is what holds that
+  // line. Baseline when the harness landed was 22/25.
+  "islands3.json": 24,
 };
 
 interface Miss {
@@ -50,7 +54,7 @@ describe("vision against real photos", () => {
       const side = labels.boardSide as BoardSide;
       const topo = topology(side);
 
-      const { board } = proposeBoard({
+      const { board, debug } = proposeBoard({
         image,
         taps,
         topology: topo,
@@ -77,6 +81,15 @@ describe("vision against real photos", () => {
         correct,
         `${name}: ${correct}/${topo.cells.length} cells correct, needed ${required}\n${report}`,
       ).toBeGreaterThanOrEqual(required);
+
+      // Whatever the classifier gets wrong, the user must at least be pointed
+      // at it. A silent miss is worse than a flagged one — it is the only kind
+      // that can reach the score sheet unnoticed.
+      const flagged = new Set(
+        debug.filter((d) => isUncertain(d.classification)).map((d) => d.cellId),
+      );
+      const unflagged = misses.filter((m) => !flagged.has(m.cellId)).map((m) => m.cellId);
+      expect(unflagged, `${name}: wrong cells that were NOT flagged for review`).toEqual([]);
     });
   }
 });

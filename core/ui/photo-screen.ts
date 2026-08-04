@@ -468,13 +468,24 @@ export function renderPhotoScreen<B extends BoardState>(
     summary.textContent =
       "Debug — per-cell vote results (Mean RGB feeds swatch recalibration)";
 
+    // The fitted white balance. Gains far from 1 mean an unusual light; photo
+    // and palette gains close to each other mean this photo was already lit
+    // much like the swatches were.
+    const gains = (label: string, g: readonly number[]): string =>
+      `${label} ${g.map((v) => v.toFixed(2)).join(" / ")}`;
+    const balance = p(
+      `Color correction (R/G/B gains) — ` +
+        `${gains("photo", proposed.normalization.photo.gain)}, ` +
+        `${gains("palette", proposed.normalization.palette.gain)}`,
+    );
+
     const exportControls = document.createElement("p");
     exportControls.append(
       button("Export labels", exportLabels),
       " — copies the corrected board as ground truth for the vision tests.",
     );
 
-    details.append(summary, exportControls);
+    details.append(summary, balance, exportControls);
     if (labels !== null) {
       const textarea = document.createElement("textarea");
       textarea.readOnly = true;
