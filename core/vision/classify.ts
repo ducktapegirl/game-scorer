@@ -17,11 +17,23 @@ export interface PatchClassification {
 }
 
 // Thresholds for flagging a classification as needing human review in the M5
-// correction UI. Starting points tuned against the three real photos during
-// verification; island photo B1's documented misread at cell 1,2 must flag.
+// correction UI. Measured against the labelled photos in resources/fixtures.
+//
+// The ignored-share bar was 0.6 and is now 0.45, because a patch half-covered
+// by an animal cube is a weak read even when the surviving pixels agree. That
+// is not hypothetical: the single cell the classifier still gets wrong across
+// the fixtures (a brown token under warm light, read as an empty hex) wins
+// 89% of its vote with a mean ΔE of 6.2 — more confident and better matched
+// than the median CORRECT cell. Nothing about the winner betrays it; only the
+// fact that a cube ate half the patch does. The cost is six extra flags across
+// 97 correct cells, which is cheap for a mark that only draws the eye.
+//
+// An absolute ΔE reject was tried here and deliberately left out: at ΔE > 14
+// it flags 20 correct cells and still misses that one, because a token really
+// can land closer to the wrong swatch than a well-read token lands to its own.
 export const UNCERTAIN_VOTE_SHARE = 0.5; // winner won less than half the vote
 export const UNCERTAIN_RUNNERUP_MARGIN = 0.15; // runner-up this close to the winner
-export const UNCERTAIN_IGNORED_SHARE = 0.6; // a cube covered most of the patch
+export const UNCERTAIN_IGNORED_SHARE = 0.45; // a cube covered much of the patch
 
 // Whether a classification is shaky enough to surface a "?" flag. Never blocks
 // acceptance — it only draws the user's eye. The boundary is deliberately

@@ -73,17 +73,38 @@ describe("end-to-end over a synthetic side-A photo", () => {
     { x: 178, y: 703 },
   ];
 
-  // token on each non-empty cell + whether an animal cube sits on it
-  const TRUE_BOARD: Partial<Record<string, { token: TokenColor; cube: boolean }>> = {
-    "0,0": { token: "green", cube: false }, // a calibration corner with a token
-    "0,1": { token: "blue", cube: true },
-    "1,0": { token: "blue", cube: false },
-    "2,0": { token: "red", cube: true },
-    "2,1": { token: "gray", cube: false },
-    "2,2": { token: "gray", cube: true },
-    "3,0": { token: "yellow", cube: false },
-    "3,1": { token: "yellow", cube: true },
-    "4,-1": { token: "brown", cube: false },
+  // Token on each non-empty cell, and which cube tone (if any) sits on it.
+  //
+  // The board is filled the way a real one is, and that now matters: the
+  // pipeline fits a white balance from the colors the photo actually contains,
+  // so a board that is mostly one flat tone describes a different light than a
+  // board carrying the full palette. The earlier version of this fixture left
+  // 14 of 23 cells bare and used a single cube tone, which read as a strong
+  // color cast that was not there. Keep this representative — every token
+  // color present, cubes in more than one tone including the near-white one,
+  // and a few genuinely empty cells.
+  const TRUE_BOARD: Partial<Record<string, { token: TokenColor; cube: number | null }>> = {
+    "0,0": { token: "green", cube: null }, // a calibration corner with a token
+    "0,1": { token: "blue", cube: 0 },
+    "0,2": { token: "yellow", cube: null },
+    "0,3": { token: "gray", cube: 3 },
+    "0,4": { token: "brown", cube: null }, // another calibration corner
+    "1,0": { token: "blue", cube: null },
+    "1,1": { token: "green", cube: 2 },
+    "1,3": { token: "red", cube: null },
+    "2,-1": { token: "yellow", cube: null },
+    "2,0": { token: "red", cube: 0 },
+    "2,1": { token: "gray", cube: null },
+    "2,2": { token: "gray", cube: 0 },
+    "2,3": { token: "blue", cube: 1 },
+    "3,-1": { token: "green", cube: null },
+    "3,0": { token: "yellow", cube: null },
+    "3,1": { token: "yellow", cube: 0 },
+    "3,2": { token: "blue", cube: null },
+    "4,-2": { token: "gray", cube: null },
+    "4,-1": { token: "brown", cube: null },
+    "4,0": { token: "green", cube: 3 },
+    "4,2": { token: "yellow", cube: null },
   };
 
   function syntheticPhoto(): PixelSource {
@@ -93,20 +114,19 @@ describe("end-to-end over a synthetic side-A photo", () => {
       topo.calibrationCells!.map((id) => topo.cellCenter(id)) as [Point, Point, Point, Point],
       TAPS,
     );
-    // Some empty cells show the printed art's second tone — it must read as
-    // empty, not as a blue token.
+    // An empty cell showing the printed art's second tone — it must read as
+    // empty, not as a token.
     const artTone = EMPTY_TONES_RGB.A[1] ?? EMPTY_TONES_RGB.A[0]!;
-    paintPatternedDisk(image, applyHomography(h, topo.cellCenter("1,1")), 40, artTone, artTone);
     paintPatternedDisk(image, applyHomography(h, topo.cellCenter("1,2")), 40, artTone, artTone);
 
     for (const [id, { token, cube }] of Object.entries(TRUE_BOARD) as [
       string,
-      { token: TokenColor; cube: boolean },
+      { token: TokenColor; cube: number | null },
     ][]) {
       const center = applyHomography(h, topo.cellCenter(id));
       const tones = TOKEN_TONES_RGB[token];
       paintPatternedDisk(image, center, 55, tones[0]!, tones[tones.length - 1]!);
-      if (cube) paintCube(image, center, 22, CUBE_TONES_RGB[0]!);
+      if (cube !== null) paintCube(image, center, 22, CUBE_TONES_RGB[cube]!);
     }
     return image;
   }

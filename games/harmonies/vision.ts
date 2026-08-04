@@ -15,6 +15,14 @@ import type { BoardSide } from "./topology";
 // cream); retune when a side-A photo with genuinely empty cells exists.
 // Side B values are measured from real empty hexes in the island photos
 // (resources/test_image_islands*.jpg — 5 empty cells across both).
+//
+// Side B shipped a second "shadowed cream hex" tone {141,129,118} that had to
+// go: a desaturated mid-neutral sits in the middle of every other token color,
+// so it won pixels off blue, gray and brown tokens alike and voted whole
+// occupied cells empty. Removing it is worth two cells across the fixtures
+// (95/98 → 97/98). Side A keeps both of its tones only because no side-A photo
+// with genuinely empty cells exists to re-validate against; the same magnet
+// effect is likely there too.
 export const EMPTY_TONES_RGB: Record<BoardSide, Rgb[]> = {
   A: [
     { r: 178, g: 146, b: 114 }, // pedestal cream (shadowed)
@@ -22,7 +30,6 @@ export const EMPTY_TONES_RGB: Record<BoardSide, Rgb[]> = {
   ],
   B: [
     { r: 182, g: 169, b: 158 }, // lit cream hex
-    { r: 141, g: 129, b: 118 }, // shadowed cream hex
   ],
 };
 
@@ -32,14 +39,22 @@ export const EMPTY_TONES_RGB: Record<BoardSide, Rgb[]> = {
 // hits it: two tones measured from resources/test_image1.jpg, two more from
 // the island photos (cubes over gray/brown/green). A measured near-black
 // shadow cluster is deliberately NOT included — it matches every deep shadow
-// on the board and discards good token pixels. The white cube is a
-// PLACEHOLDER until one appears in a photo.
+// on the board and discards good token pixels.
+//
+// An "amber over blue tokens" tone {39,87,100} was dropped for the same
+// reason: it sat within a few ΔE of blue's own base tone {12,71,89}, so every
+// pixel of a plain blue token was thrown away as cube instead of voting, and
+// blue cells lost to whatever won the scraps.
+//
+// The near-white tone is NOT a placeholder any more — the clear cube in
+// resources/test_image_islands3.jpg confirmed it, and it also mops up blown
+// specular highlights on glossy tokens. Removing it costs nine cells across
+// the fixtures, so it stays.
 export const CUBE_TONES_RGB: Rgb[] = [
   { r: 113, g: 59, b: 28 }, // amber over warm tokens
-  { r: 39, g: 87, b: 100 }, // amber over blue tokens
   { r: 206, g: 133, b: 15 }, // amber lit face
   { r: 148, g: 123, b: 101 }, // milky amber over gray/brown
-  { r: 240, g: 240, b: 235 }, // PLACEHOLDER white cube
+  { r: 240, g: 240, b: 235 }, // clear cube / blown highlight
 ];
 
 const EMPTY_SWATCHES: Record<BoardSide, Lab[]> = {
