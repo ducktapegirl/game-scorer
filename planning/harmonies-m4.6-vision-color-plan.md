@@ -137,8 +137,10 @@ instead.
   against a small set; the leave-one-out numbers are the honest generalization estimate,
   and they are lower than the in-sample ones.
 - The four fixtures' labels were transcribed from the photos and their taps estimated by
-  eye (then verified against rendered sample-point overlays), not exported from the app.
-  Replacing them with real exports would remove that assumption.
+  eye (then verified against rendered sample-point overlays). `islands3`'s colours have
+  since been **confirmed** against the board owner's own export — 25/25, including the
+  lone brown trunk. The other three remain unconfirmed, and all four still carry
+  eye-estimated taps.
 - Stack parallax is still unsolved and out of scope: tall stacks project off the board
   plane and their tops sit off-center.
 - Vision still never determines stack height; that remains a tap-cycle in the correction UI.
