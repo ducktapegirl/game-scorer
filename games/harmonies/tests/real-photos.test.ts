@@ -33,7 +33,9 @@ const MIN_CORRECT: Record<string, number> = {
   // has an animal cube over half of it. A swatch close enough to catch it
   // would start reading genuinely empty hexes as brown, so it is left to the
   // correction UI — `flags every cell it gets wrong` below is what holds that
-  // line. Baseline when the harness landed was 22/25.
+  // line. This photo scored 18/25 before the illuminant normalization went in
+  // (17/25 driving the real app in a browser), with five of the seven misses
+  // unflagged.
   "islands3.json": 24,
 };
 

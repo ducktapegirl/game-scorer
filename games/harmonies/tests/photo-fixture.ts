@@ -15,6 +15,7 @@
 import { readFileSync } from "node:fs";
 import { decode } from "jpeg-js";
 import { denormalizeTaps, type PhotoLabels } from "../../../core/vision/labels";
+import { delinearize, linearize } from "../../../core/vision/color";
 import type { CornerTaps } from "../../../core/vision/propose";
 import type { PixelSource } from "../../../core/vision/sample";
 import { MAX_CANVAS_SIDE } from "../../../core/ui/photo-screen";
@@ -67,6 +68,166 @@ function readTiffOrientation(view: DataView, base: number): number {
     return value >= 1 && value <= 8 ? value : 1;
   }
   return 1;
+}
+
+// --- ICC colour management -------------------------------------------------
+
+// A canvas is sRGB, and the browser converts a wide-gamut photo into it when
+// drawing. Skipping that here would mean the tests measure different colours
+// than the app sees — not a small difference: reading Display P3 code values
+// as if they were sRGB desaturates every token, which is exactly the kind of
+// shift this whole milestone is about. Phones increasingly save P3, so this is
+// the common case rather than an edge case.
+//
+// Only matrix/TRC profiles are handled (the kind cameras emit), and the tone
+// curve is assumed to be the sRGB one — true for plain sRGB and for Apple's
+// "Display P3 Gamut with sRGB Transfer". Anything else falls back to identity.
+
+type Matrix = [number, number, number][];
+
+function multiply(a: Matrix, b: Matrix): Matrix {
+  return a.map((row) => [0, 1, 2].map((j) => row.reduce((s, v, k) => s + v * b[k]![j]!, 0))) as Matrix;
+}
+
+// Bradford chromatic adaptation from the ICC connection space (D50) to D65,
+// which is what sRGB is defined against.
+const D50_TO_D65: Matrix = [
+  [0.9555766, -0.0230393, 0.0631636],
+  [-0.0282895, 1.0099416, 0.0210077],
+  [0.0122982, -0.020483, 1.3299098],
+];
+
+// XYZ (D65) → linear sRGB.
+const XYZ_TO_SRGB: Matrix = [
+  [3.2404542, -1.5371385, -0.4985314],
+  [-0.969266, 1.8760108, 0.041556],
+  [0.0556434, -0.2040259, 1.0572252],
+];
+
+const IDENTITY: Matrix = [
+  [1, 0, 0],
+  [0, 1, 0],
+  [0, 0, 1],
+];
+
+function findIccProfile(jpeg: Uint8Array): Uint8Array | null {
+  const view = new DataView(jpeg.buffer, jpeg.byteOffset, jpeg.byteLength);
+  let offset = 2;
+  const chunks: Uint8Array[] = [];
+  while (offset + 4 <= jpeg.length) {
+    if (jpeg[offset] !== 0xff) break;
+    const marker = jpeg[offset + 1]!;
+    if (marker === 0x01 || (marker >= 0xd0 && marker <= 0xd9)) {
+      offset += 2;
+      continue;
+    }
+    if (marker === 0xda) break;
+    const length = view.getUint16(offset + 2);
+    if (length < 2) break;
+    if (
+      marker === 0xe2 &&
+      String.fromCharCode(...jpeg.slice(offset + 4, offset + 15)) === "ICC_PROFILE"
+    ) {
+      // Skip the 12-byte identifier plus the 2-byte chunk counters.
+      chunks.push(jpeg.slice(offset + 18, offset + 2 + length));
+    }
+    offset += 2 + length;
+  }
+  if (chunks.length === 0) return null;
+  const total = chunks.reduce((n, c) => n + c.length, 0);
+  const profile = new Uint8Array(total);
+  let at = 0;
+  for (const chunk of chunks) {
+    profile.set(chunk, at);
+    at += chunk.length;
+  }
+  return profile;
+}
+
+// The profile's linear-RGB → linear-sRGB matrix, or the identity when the
+// profile is absent, unsupported, or already sRGB.
+export function iccToSrgbMatrix(jpeg: Uint8Array): Matrix {
+  const profile = findIccProfile(jpeg);
+  if (!profile || profile.length < 132) return IDENTITY;
+  const view = new DataView(profile.buffer, profile.byteOffset, profile.byteLength);
+
+  const tags = new Map<string, { offset: number; size: number }>();
+  const count = view.getUint32(128);
+  if (count > 200) return IDENTITY;
+  for (let i = 0; i < count; i++) {
+    const at = 132 + i * 12;
+    if (at + 12 > profile.length) return IDENTITY;
+    const sig = String.fromCharCode(...profile.slice(at, at + 4));
+    tags.set(sig, { offset: view.getUint32(at + 4), size: view.getUint32(at + 8) });
+  }
+
+  // An XYZType colorant tag: 8-byte header then three s15Fixed16 values.
+  const colorant = (sig: string): [number, number, number] | null => {
+    const tag = tags.get(sig);
+    if (!tag || tag.size < 20 || tag.offset + 20 > profile.length) return null;
+    return [
+      view.getInt32(tag.offset + 8) / 65536,
+      view.getInt32(tag.offset + 12) / 65536,
+      view.getInt32(tag.offset + 16) / 65536,
+    ];
+  };
+
+  const r = colorant("rXYZ");
+  const g = colorant("gXYZ");
+  const b = colorant("bXYZ");
+  if (!r || !g || !b) return IDENTITY;
+
+  // Colorants are the columns of the profile's RGB → XYZ(D50) matrix.
+  const toXyzD50: Matrix = [
+    [r[0], g[0], b[0]],
+    [r[1], g[1], b[1]],
+    [r[2], g[2], b[2]],
+  ];
+  return multiply(XYZ_TO_SRGB, multiply(D50_TO_D65, toXyzD50));
+}
+
+// True when the matrix is close enough to the identity that applying it would
+// only add rounding noise — i.e. the photo is already sRGB.
+function isIdentity(m: Matrix): boolean {
+  for (let i = 0; i < 3; i++) {
+    for (let j = 0; j < 3; j++) {
+      if (Math.abs(m[i]![j]! - (i === j ? 1 : 0)) > 0.002) return false;
+    }
+  }
+  return true;
+}
+
+// Lookup tables: a full-resolution phone photo is ~12M pixels, and three
+// pow() calls each way per pixel is slow enough to matter in a test run.
+const TO_LINEAR = Float64Array.from({ length: 256 }, (_, i) => linearize(i));
+const FROM_LINEAR_STEPS = 4096;
+const FROM_LINEAR = Uint8ClampedArray.from({ length: FROM_LINEAR_STEPS + 1 }, (_, i) =>
+  Math.round(delinearize(i / FROM_LINEAR_STEPS)),
+);
+
+function encode(linear: number): number {
+  const i = Math.round(Math.min(1, Math.max(0, linear)) * FROM_LINEAR_STEPS);
+  return FROM_LINEAR[i]!;
+}
+
+export function convertToSrgb(image: PixelSource, matrix: Matrix): PixelSource {
+  if (isIdentity(matrix)) return image;
+  const [m0, m1, m2] = matrix as [
+    [number, number, number],
+    [number, number, number],
+    [number, number, number],
+  ];
+  const data = new Uint8ClampedArray(image.data.length);
+  for (let i = 0; i < image.data.length; i += 4) {
+    const r = TO_LINEAR[image.data[i]!]!;
+    const g = TO_LINEAR[image.data[i + 1]!]!;
+    const b = TO_LINEAR[image.data[i + 2]!]!;
+    data[i] = encode(m0[0] * r + m0[1] * g + m0[2] * b);
+    data[i + 1] = encode(m1[0] * r + m1[1] * g + m1[2] * b);
+    data[i + 2] = encode(m2[0] * r + m2[1] * g + m2[2] * b);
+    data[i + 3] = 255;
+  }
+  return { width: image.width, height: image.height, data };
 }
 
 // --- raster operations -----------------------------------------------------
@@ -170,7 +331,8 @@ export function decodePhoto(path: string): PixelSource {
     height: raw.height,
     data: new Uint8ClampedArray(raw.data.buffer, raw.data.byteOffset, raw.data.byteLength),
   };
-  return remap(decoded, readExifOrientation(file));
+  const managed = convertToSrgb(decoded, iccToSrgbMatrix(file));
+  return remap(managed, readExifOrientation(file));
 }
 
 export function loadFixture(labelsPath: string, photoDir: string): LoadedFixture {

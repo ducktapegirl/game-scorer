@@ -74,15 +74,34 @@ exists to validate against.
 `UNCERTAIN_IGNORED_SHARE` 0.6 → 0.45. The real-photo test now also asserts that **every**
 cell the classifier gets wrong is flagged for review.
 
+### 6. Colour management in the harness (`games/harmonies/tests/photo-fixture.ts`)
+
+The new photo carries a **Display P3** ICC profile; the three older ones are plain sRGB.
+A canvas is sRGB and the browser converts on draw, so a harness that ignores the profile
+measures different colours than the app sees — reading P3 code values as sRGB desaturates
+every token. Matrix/TRC profiles are now applied (validated: the P3 photo produces exactly
+the published P3→sRGB matrix, and the three sRGB photos come out identity to within
+0.0004).
+
+This is also a second, independent cause of the original misreads: the new phone shoots
+wide-gamut. The app was always fine — Chromium colour-manages — but the numbers measured
+before this went in were measured on the wrong pixels.
+
 ## Results
+
+Measured with colour management on both sides, so before and after are comparable:
 
 | Photo | Before | After |
 |---|---|---|
 | riverA (side A, daylight) | 23/23 | 23/23 |
 | islands1 | 25/25 | 25/25 |
 | islands2 | 25/25 | 25/25 |
-| **islands3 (new camera, warm light)** | **22/25** | **24/25** |
-| **total** | **95/98** | **97/98** |
+| **islands3 (new phone, warm light)** | **18/25** | **24/25** |
+| **total** | **91/98** | **97/98** |
+| **silent (unflagged) errors** | **5** | **0** |
+
+Confirmed by driving the real app in a browser with the same photo and taps: **17/25 →
+24/25**, harness and app agreeing cell for cell afterwards.
 
 The one remaining miss is a lone brown token under warm tungsten that normalizes to within
 ~15 ΔE of an empty cream hex, with an animal cube over half of it. A swatch close enough
@@ -107,6 +126,10 @@ instead.
   (83–92/98) score below the hand-authored set. Only the two harmful swatches were removed.
 - **The new photo's "red" building tile.** It is a *brown* trunk tile — same mottled matte
   surface as the known brown in islands2, and nothing like the vivid pink building tiles.
+- **That the problem was purely illumination.** Half of it was the colour space: the new
+  phone saves Display P3. The app handled that already; the first version of the test
+  harness did not, which made the baseline look better than it was (22/25 rather than
+  18/25) and would have quietly mismeasured every future wide-gamut photo.
 
 ## Caveats
 
