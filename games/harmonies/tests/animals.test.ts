@@ -61,6 +61,20 @@ describe("Animal Cards", () => {
     expect(scoreAnimals([{ id: "ani_032", count: 2 }]).points).toBe(18);
     // Kookaburra (ani_029): track [5, 11, 18]
     expect(scoreAnimals([{ id: "ani_029", count: 3 }]).points).toBe(18);
+    // Arctic Fox (ani_007): track [4, 9, 16], checked against the physical card
+    expect(scoreAnimals([{ id: "ani_007", count: 1 }]).points).toBe(4);
+    expect(scoreAnimals([{ id: "ani_007", count: 2 }]).points).toBe(9);
+    expect(scoreAnimals([{ id: "ani_007", count: 3 }]).points).toBe(16);
+  });
+
+  it("scoreAnimals matches a real game (Arctic Fox 3, Frog 4, Koala 2, Mouse 3 = 49)", () => {
+    const result = scoreAnimals([
+      { id: "ani_007", count: 3 }, // 16
+      { id: "ani_014", count: 4 }, // 10
+      { id: "ani_028", count: 2 }, // 6
+      { id: "ani_023", count: 3 }, // 17
+    ]);
+    expect(result.points).toBe(49);
   });
 
   it("scoreAnimals throws on unknown card id", () => {
