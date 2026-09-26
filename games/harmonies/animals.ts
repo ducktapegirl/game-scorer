@@ -22,7 +22,7 @@ export const ANIMAL_CARDS: AnimalCard[] = [
   { id: "ani_004", name: "Meerkat", color: "Gray", track: [2, 5, 9, 14] },
   { id: "ani_005", name: "Macaque", color: "Gray", track: [5, 11] },
   { id: "ani_006", name: "Penguin", color: "Gray", track: [4, 10, 16] },
-  { id: "ani_007", name: "Arctic Fox", color: "Yellow", track: [4, 9, 16] },
+  { id: "ani_007", name: "Arctic Fox", color: "Yellow", track: [5, 10, 17] },
   { id: "ani_008", name: "Ladybug", color: "Yellow", track: [2, 5, 8, 12, 17] },
   { id: "ani_009", name: "Llama", color: "Yellow", track: [5, 12] },
   { id: "ani_010", name: "Raccoon", color: "Yellow", track: [6, 12] },

@@ -21,7 +21,7 @@ track `[3, 6, 10, 15]`: 0 cubes placed → 0; 1 cube → 3; 2 cubes → 6; 3 cub
 | ani_004 | Meerkat | Gray | 4 | 2, 5, 9, 14 |
 | ani_005 | Macaque | Gray | 2 | 5, 11 |
 | ani_006 | Penguin | Gray | 3 | 4, 10, 16 |
-| ani_007 | Arctic Fox | Yellow | 3 | 4, 9, 16 |
+| ani_007 | Arctic Fox | Yellow | 3 | 5, 10, 17 |
 | ani_008 | Ladybug | Yellow | 5 | 2, 5, 8, 12, 17 |
 | ani_009 | Llama | Yellow | 2 | 5, 12 |
 | ani_010 | Raccoon | Yellow | 2 | 6, 12 |
